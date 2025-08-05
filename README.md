@@ -83,12 +83,12 @@ if (bubbleAbyss.size() >= 2) {
 \
 With the original implementation, if the stack is empty or has only one element, it will pull an undefine out off the stack and compare it. It has 4 conditions.
 
-| Stack  | Bubble A  | Bubble B  | Result |
-|--------|-----------|-----------|--------|
-| Empty  | Undefined | Undefined | True   |
-| 1      | 1         | Undefined | False  |
-| 1 2    | 2         | 1         | False  |
-| 2 2    | 2         | 2         | True   |
+| Stack  | Bubble A    | Bubble B    | Result |
+|--------|-------------|-------------|--------|
+| Empty  | `undefined` | `undefined` | True   |
+| 1      | 1           | `undefined` | False  |
+| 1 2    | 2           | 1           | False  |
+| 2 2    | 2           | 2           | True   |
 
 With my implementation, it will check if the stack has at least 2 elements before comparing them. If less than 2 elements are present, it will simply ignore that particular instruction. \
 This behavior applies to all instructions, illegal instructions will be ignored, and the program will continue executing, while throwing a warning.
@@ -104,7 +104,7 @@ While the port mostly ignores undefined behaviors, treating it as a `nop` instru
 General undefined bahaviors:
 - If the last instruction has no argument when it's supposed to, it'll be ignored.
 - All instructions that require at least X bubbles will be ignored if the stack has less than X bubbles.
-- 
+
 \
 Instruction-specific undefined behaviors:
 

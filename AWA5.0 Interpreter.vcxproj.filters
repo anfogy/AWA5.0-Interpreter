@@ -20,6 +20,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\Desktop\AWA5.0 scripts\4-elements_stack_reversal_via_loop.awa" />
+    <Text Include="CMakeLists.txt" />
   </ItemGroup>
 </Project>

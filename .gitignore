@@ -364,3 +364,6 @@ FodyWeavers.xsd
 
 # Compile Score files
 *.scor*
+
+# CMake
+build/

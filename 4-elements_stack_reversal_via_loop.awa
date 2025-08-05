@@ -1,0 +1,181 @@
+blw S(1)             awa awawa awawa awa awawa awawa awawawa            5     43
+blw S(2)             awa awawa awawa awa awawa awawawa awa awa          5     44
+blw S(3)             awa awawa awawa awa awawa awawawa awawa            5     45
+blw S(4)             awa awawa awawa awa awawa awawawa wa awa           5     46
+srn 4                awawa awa awawa awa awawa awa awa                  9     4
+blw -1               awa awawa awawa wawa wawa wawa wawa                5     -1
+mul                  awawawa awawa                                      13    None
+pop                  awa awawawa wa                                     7     None
+blw 2                awa awawa awawa awa awa awa awa awa awawa awa      5     2
+lbl 0                wa awa awa awa awa awa awa awa awa awa             16    0
+blw 0                awa awawa awawa awa awa awa awa awa awa awa awa    5     0
+eql                  wa awa awawa awa                                   18    None
+jmp 1                wa awa awa awawa awa awa awa awawa                 17    1
+pop                  awa awawawa wa                                     7     None
+blw 1                awa awawa awawa awa awa awa awa awa awa awawa      5     1
+sbm 1                awa awawawa awa awa awa awa awawa                  6     1
+sub                  awawawa awa awa                                    12    None
+sbm 0                awa awawawa awa awa awa awa awa awa                6     0
+cnt                  awawawa wawa                                       15    None
+blw 0                awa awawa awawa awa awa awa awa awa awa awa awa    5     0
+eql                  wa awa awawa awa                                   18    None
+jmp 5                wa awa awa awawa awa awawa awawa                   17    5
+pop                  awa awawawa wa                                     7     None
+pop                  awa awawawa wa                                     7     None
+sbm 0                awa awawawa awa awa awa awa awa awa                6     0
+jmp 6                wa awa awa awawa awa awawawa awa                   17    6
+lbl 5                wa awa awa awa awa awa awawa awawa                 16    5
+pop                  awa awawawa wa                                     7     None
+pop                  awa awawawa wa                                     7     None
+lbl 6                wa awa awa awa awa awa awawawa awa                 16    6
+sbm 1                awa awawawa awa awa awa awa awawa                  6     1
+srn 2                awawa awa awawa awa awa awawa awa                  9     2
+sbm 0                awa awawawa awa awa awa awa awa awa                6     0
+jmp 2                wa awa awa awawa awa awa awawa awa                 17    2
+lbl 1                wa awa awa awa awa awa awa awa awawa               16    1
+pop                  awa awawawa wa                                     7     None
+pop                  awa awawawa wa                                     7     None
+sbm 1                awa awawawa awa awa awa awa awawa                  6     1
+pop                  awa awawawa wa                                     7     None
+sbm 0                awa awawawa awa awa awa awa awa awa                6     0
+sbm 0                awa awawawa awa awa awa awa awa awa                6     0
+pop                  awa awawawa wa                                     7     None
+sbm 0                awa awawawa awa awa awa awa awa awa                6     0
+sbm 0                awa awawawa awa awa awa awa awa awa                6     0
+srn 4                awawa awa awawa awa awawa awa awa                  9     4
+blw -1               awa awawa awawa wawa wawa wawa wawa                5     -1
+mul                  awawawa awawa                                      13    None
+prn                  awa awa awa awawa                                  1     None
+trm                  wawa wawa wa                                       31    None
+lbl 2                wa awa awa awa awa awa awa awawa awa               16    2
+cnt                  awawawa wawa                                       15    None
+blw 0                awa awawa awawa awa awa awa awa awa awa awa awa    5     0
+eql                  wa awa awawa awa                                   18    None
+jmp 4                wa awa awa awawa awa awawa awa awa                 17    4
+pop                  awa awawawa wa                                     7     None
+sbm 0                awa awawawa awa awa awa awa awa awa                6     0
+jmp 2                wa awa awa awawa awa awa awawa awa                 17    2
+lbl 3                wa awa awa awa awa awa awa awawawa                 16    3
+sbm 1                awa awawawa awa awa awa awa awawa                  6     1
+pop                  awa awawawa wa                                     7     None
+sbm 0                awa awawawa awa awa awa awa awa awa                6     0
+jmp 2                wa awa awa awawa awa awa awawa awa                 17    2
+lbl 4                wa awa awa awa awa awa awawa awa awa               16    4
+pop                  awa awawawa wa                                     7     None
+sbm 1                awa awawawa awa awa awa awa awawa                  6     1
+lss                  wa awa awawawa                                     19    None
+jmp 3                wa awa awa awawa awa awa awawawa                   17    3
+sbm 1                awa awawawa awa awa awa awa awawa                  6     1
+pop                  awa awawawa wa                                     7     None
+jmp 0                wa awa awa awawa awa awa awa awa awa               17    0
+----------------------------------------------------------------------------------------------------
+Stacktrace:
+blw 43               43
+blw 44               43 44
+blw 45               43 44 45
+blw 46               43 44 45 46
+srn 4                (43 44 45 46)
+blw -1               (43 44 45 46) -1
+mul                  (-43 -44 -45 -46)
+pop                  -43 -44 -45 -46
+blw 2                -43 -44 -45 -46 2
+lbl 0                -43 -44 -45 -46 2
+blw 0                -43 -44 -45 -46 2 0
+eql                  -43 -44 -45 -46 2 0
+pop                  -43 -44 -45 -46 2
+blw 1                -43 -44 -45 -46 2 1
+sbm 1                -43 -44 -45 -46 1 2
+sub                  -43 -44 -45 -46 1
+sbm 0                1 -43 -44 -45 -46
+cnt                  1 -43 -44 -45 -46 0
+blw 0                1 -43 -44 -45 -46 0 0
+eql                  1 -43 -44 -45 -46 0 0
+jmp 5                1 -43 -44 -45 -46 0 0
+pop                  1 -43 -44 -45 -46 0
+pop                  1 -43 -44 -45 -46
+lbl 6                1 -43 -44 -45 -46
+sbm 1                1 -43 -44 -46 -45
+srn 2                1 -43 -44 (-46 -45)
+sbm 0                (-46 -45) 1 -43 -44
+jmp 2                (-46 -45) 1 -43 -44
+cnt                  (-46 -45) 1 -43 -44 0
+blw 0                (-46 -45) 1 -43 -44 0 0
+eql                  (-46 -45) 1 -43 -44 0 0
+jmp 4                (-46 -45) 1 -43 -44 0 0
+pop                  (-46 -45) 1 -43 -44 0
+sbm 1                (-46 -45) 1 -43 0 -44
+lss                  (-46 -45) 1 -43 0 -44
+jmp 3                (-46 -45) 1 -43 0 -44
+sbm 1                (-46 -45) 1 -43 -44 0
+pop                  (-46 -45) 1 -43 -44
+sbm 0                -44 (-46 -45) 1 -43
+jmp 2                -44 (-46 -45) 1 -43
+cnt                  -44 (-46 -45) 1 -43 0
+blw 0                -44 (-46 -45) 1 -43 0 0
+eql                  -44 (-46 -45) 1 -43 0 0
+jmp 4                -44 (-46 -45) 1 -43 0 0
+pop                  -44 (-46 -45) 1 -43 0
+sbm 1                -44 (-46 -45) 1 0 -43
+lss                  -44 (-46 -45) 1 0 -43
+jmp 3                -44 (-46 -45) 1 0 -43
+sbm 1                -44 (-46 -45) 1 -43 0
+pop                  -44 (-46 -45) 1 -43
+sbm 0                -43 -44 (-46 -45) 1
+jmp 2                -43 -44 (-46 -45) 1
+cnt                  -43 -44 (-46 -45) 1 0
+blw 0                -43 -44 (-46 -45) 1 0 0
+eql                  -43 -44 (-46 -45) 1 0 0
+jmp 4                -43 -44 (-46 -45) 1 0 0
+pop                  -43 -44 (-46 -45) 1 0
+sbm 1                -43 -44 (-46 -45) 0 1
+lss                  -43 -44 (-46 -45) 0 1
+sbm 1                -43 -44 (-46 -45) 1 0
+pop                  -43 -44 (-46 -45) 1
+jmp 0                -43 -44 (-46 -45) 1
+blw 0                -43 -44 (-46 -45) 1 0
+eql                  -43 -44 (-46 -45) 1 0
+pop                  -43 -44 (-46 -45) 1
+blw 1                -43 -44 (-46 -45) 1 1
+sbm 1                -43 -44 (-46 -45) 1 1
+sub                  -43 -44 (-46 -45) 0
+sbm 0                0 -43 -44 (-46 -45)
+cnt                  0 -43 -44 (-46 -45) 2
+blw 0                0 -43 -44 (-46 -45) 2 0
+eql                  0 -43 -44 (-46 -45) 2 0
+pop                  0 -43 -44 (-46 -45) 2
+pop                  0 -43 -44 (-46 -45)
+sbm 0                (-46 -45) 0 -43 -44
+jmp 6                (-46 -45) 0 -43 -44
+sbm 1                (-46 -45) 0 -44 -43
+srn 2                (-46 -45) 0 (-44 -43)
+sbm 0                (-44 -43) (-46 -45) 0
+jmp 2                (-44 -43) (-46 -45) 0
+cnt                  (-44 -43) (-46 -45) 0 0
+blw 0                (-44 -43) (-46 -45) 0 0 0
+eql                  (-44 -43) (-46 -45) 0 0 0
+jmp 4                (-44 -43) (-46 -45) 0 0 0
+pop                  (-44 -43) (-46 -45) 0 0
+sbm 1                (-44 -43) (-46 -45) 0 0
+lss                  (-44 -43) (-46 -45) 0 0
+sbm 1                (-44 -43) (-46 -45) 0 0
+pop                  (-44 -43) (-46 -45) 0
+jmp 0                (-44 -43) (-46 -45) 0
+blw 0                (-44 -43) (-46 -45) 0 0
+eql                  (-44 -43) (-46 -45) 0 0
+jmp 1                (-44 -43) (-46 -45) 0 0
+pop                  (-44 -43) (-46 -45) 0
+pop                  (-44 -43) (-46 -45)
+sbm 1                (-46 -45) (-44 -43)
+pop                  (-46 -45) -44 -43
+sbm 0                -43 (-46 -45) -44
+sbm 0                -44 -43 (-46 -45)
+pop                  -44 -43 -46 -45
+sbm 0                -45 -44 -43 -46
+sbm 0                -46 -45 -44 -43
+srn 4                (-46 -45 -44 -43)
+blw -1               (-46 -45 -44 -43) -1
+mul                  (46 45 44 43)
+prn
+trm
+----------------------------------------------------------------------------------------------------
+awa awa awawa awawa awa awawa awawa awawawa awa awawa awawa awa awawa awawawa awa awa awa awawa awawa awa awawa awawawa awawa awa awawa awawa awa awawa awawawa wa awa awawa awa awawa awa awawa awa awa awa awawa awawa wawa wawa wawa wawa awawawa awawa awa awawawa wa awa awawa awawa awa awa awa awa awa awawa awa wa awa awa awa awa awa awa awa awa awa awa awawa awawa awa awa awa awa awa awa awa awa wa awa awawa awa wa awa awa awawa awa awa awa awawa awa awawawa wa awa awawa awawa awa awa awa awa awa awa awawa awa awawawa awa awa awa awa awawa awawawa awa awa awa awawawa awa awa awa awa awa awa awawawa wawa awa awawa awawa awa awa awa awa awa awa awa awa wa awa awawa awa wa awa awa awawa awa awawa awawa awa awawawa wa awa awawawa wa awa awawawa awa awa awa awa awa awa wa awa awa awawa awa awawawa awa wa awa awa awa awa awa awawa awawa awa awawawa wa awa awawawa wa wa awa awa awa awa awa awawawa awa awa awawawa awa awa awa awa awawa awawa awa awawa awa awa awawa awa awa awawawa awa awa awa awa awa awa wa awa awa awawa awa awa awawa awa wa awa awa awa awa awa awa awa awawa awa awawawa wa awa awawawa wa awa awawawa awa awa awa awa awawa awa awawawa wa awa awawawa awa awa awa awa awa awa awa awawawa awa awa awa awa awa awa awa awawawa wa awa awawawa awa awa awa awa awa awa awa awawawa awa awa awa awa awa awa awawa awa awawa awa awawa awa awa awa awawa awawa wawa wawa wawa wawa awawawa awawa awa awa awa awawa wawa wawa wa wa awa awa awa awa awa awa awawa awa awawawa wawa awa awawa awawa awa awa awa awa awa awa awa awa wa awa awawa awa wa awa awa awawa awa awawa awa awa awa awawawa wa awa awawawa awa awa awa awa awa awa wa awa awa awawa awa awa awawa awa wa awa awa awa awa awa awa awawawa awa awawawa awa awa awa awa awawa awa awawawa wa awa awawawa awa awa awa awa awa awa wa awa awa awawa awa awa awawa awa wa awa awa awa awa awa awawa awa awa awa awawawa wa awa awawawa awa awa awa awa awawa wa awa awawawa wa awa awa awawa awa awa awawawa awa awawawa awa awa awa awa awawa awa awawawa wa wa awa awa awawa awa awa awa awa awa

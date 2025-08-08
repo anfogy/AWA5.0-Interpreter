@@ -7,13 +7,15 @@ const std::vector<std::string> keywords = {
     "lbl", "jmp", "eql", "lss", "gr8", "trm"
 };
 
-template<typename T = std::string>
-T determineInputType(const T& input) {
-    // TODO: Implement actual logic
-    return input;
+static std::optional<bool> determineAwaType(const std::string& input) {
+    return true;
 }
 
 static void writeStacktrace(const std::vector<std::pair<std::string, std::vector<Bubble>>>& stacktrace) {
+    if (stacktrace.empty()) {
+        return;
+	}
+
     std::ofstream ofs;
     ofs.open("stacktrace.txt", std::ofstream::out | std::ofstream::trunc);
     if (ofs.is_open()) {
@@ -63,7 +65,6 @@ static void writeStacktrace(const std::vector<std::pair<std::string, std::vector
 }
 
 int main(int argc, char* argv[]) {
-
     auto args = parse_arguments(argc, argv);
     if (!args.valid) return 1;
 
@@ -78,9 +79,11 @@ int main(int argc, char* argv[]) {
     if (filePath) {
         std::ifstream file(*filePath, std::ios::in | std::ios::binary);
         if (!file) {
-            std::cerr << "Error: Cannot open file: " << *filePath << std::endl;
+            std::cerr << "Error: Unable to open " << *filePath << std::endl;
+
             return 1;
         }
+
         std::string fileContents((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         awa = fileContents;
     }
@@ -113,14 +116,15 @@ int main(int argc, char* argv[]) {
             awa = filtered;
         }
     } else {
-        awa = determineInputType(awa);
+        isAwalang = determineAwaType(awa);
     }
 
     AwaInterpreter interpreter;
     std::vector<std::pair<std::string, std::vector<Bubble>>> stacktrace = interpreter.run(awa);
+
     std::cout << std::endl;
 
-
+    if (debugMode) writeStacktrace(stacktrace);
 
     return 0;
 }

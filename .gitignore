@@ -365,5 +365,14 @@ FodyWeavers.xsd
 # Compile Score files
 *.scor*
 
-# CMake
+# build.bat
 build/
+
+# Makefile
+awa
+
+# main.cpp
+stacktrace.txt
+
+# Test stuff
+workba*

@@ -23,11 +23,17 @@ static bool isDouble(const Bubble& bubble) {
 }
 
 static int getInt(const Bubble& bubble) {
-    return std::get<int>(bubble.value);
+    if (std::holds_alternative<int>(bubble.value)) {
+        return std::get<int>(bubble.value);
+    }
+    throw std::bad_variant_access();
 }
 
 static BubbleVector getList(const Bubble& bubble) {
-    return std::get<BubbleVector>(bubble.value);
+    if (std::holds_alternative<BubbleVector>(bubble.value)) {
+        return std::get<BubbleVector>(bubble.value);
+    }
+    throw std::bad_variant_access();
 }
 
 enum Awatisms {

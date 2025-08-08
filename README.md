@@ -118,13 +118,40 @@ Instruction-specific undefined behaviors:
 [1]: The reason why Merge(`mrg`) is on the list is that the AWA5.0 Specification states the instruction should act like Add(`4dd`) if two simple bubbles are present. But the original and other 3rd party interpreters treat it as a merge into a double bubble instead, so I decided to maintain this as a feature, instead of fixing it.
 
 ## Usage
-This version of the interpreter is not ready for any uses, however, you can still try to compile it. In this example, I'll use `gcc` as the compiler, you should know the drill anyways.
+You can build the interpreter by running the corresponding build scripts in the repository.
+<details>
+<summary>Windows</summary>
+
 ```bash
 git clone https://github.com/anfogy/AWA5.0-Interpreter.git
 cd AWA5.0-Interpreter
-gcc -std=c++20 -o awa main.cpp
+./build.bat
 ```
+This would require the [Visual C++ Build Tool](https://aka.ms/vs/17/release/vs_BuildTools.exe) to be installed. \
+`git` is not essential, you can download the repository as a ZIP file and extract it. \
+\
+Once built, you can run the interpreter with the following command:
+```bash
+cd build
+./awa.exe
+```
+A help message should pop up, after that you're good to go!
+</details>
 
-### Load AWA programs
-You can't load programs directly into the executable, you need to modify the program in the source code. Which is located in `main.cpp:737`, string argument passed in `interpreter.run()`. \
-This version on its own included a very simple 4-stack reversal program for testing, it should output `4321` when run, you can find the Awably code of it in `4-elements_stack_reversal_via_loop.awa`.
+<details>
+<summary>Linux</summary>
+
+```bash
+git clone https://github.com/anfogy/AWA5.0-Interpreter.git
+cd AWA5.0-Interpreter
+make
+```
+This would require `g++` and `make` to be installed, if you don't have them, you can install `build-essential` using your package manager. \
+`git` is not essential, you can download the repository as a ZIP file and extract it. \
+\
+Once built, you can run the interpreter with the following command:
+```bash
+./awa
+```
+A help message should pop up, after that you're good to go!
+</details>

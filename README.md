@@ -21,13 +21,16 @@ A C++ port of [Temp Tempai's AWA5.0 Interpreter](https://github.com/TempTempai/A
     - [ ] Read from stdin
         - [ ] Awalang support
         - [ ] Awably support
-    - [ ] Read from command line arguments
-        - [ ] Directly passing
+    - [x] Read from command line arguments
+        - [x] Directly passing
             - [x] Awalang support
-            - [ ] Awably support
-        - [ ] Read from file
+            - [x] Awably support
+        - [x] Read from file
             - [x] Awalang support
-            - [ ] Awably support
+            - [x] Awably support
+
+- [x] Development tools
+    - [x] Awably(assembly-like language for AWA) to Awalang (awawa awa) transpiler
 
 - [ ] Debug tools
     - [x] Stack(Bubble Abyss) trace
@@ -40,13 +43,6 @@ A C++ port of [Temp Tempai's AWA5.0 Interpreter](https://github.com/TempTempai/A
     - [ ] Full ASCII support
     - [ ] Static linking
     - [ ] ~~Error handling~~ Not needed as the language is perfect
-</details>
-
-<details>
-<summary>Some things I already have but need to be ported to C++</summary>
-
-- [ ] Development tools
-    - [ ] Awably(assembly-like language for AWA) to Awalang (awawa awa) transpiler
 </details>
 
 <details>

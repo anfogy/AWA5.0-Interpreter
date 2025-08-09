@@ -1,6 +1,6 @@
 @echo off
 
-set compiler_flags=/std:c++20 /O2 /permissive /EHsc /GL /nologo /Fe:awa.exe
+set compiler_flags=/std:c++20 /O2 /Os /permissive /EHsc /GL /nologo /Fe:awa.exe
 
 if exist ".\build" rmdir /S /Q ".\build"
 mkdir ".\build"

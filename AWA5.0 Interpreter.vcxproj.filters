@@ -21,6 +21,9 @@
     <ClCompile Include="src\AwaInterpreter.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\AwaConverter.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile">
@@ -35,6 +38,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\AwaInterpreter.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AwaConverter.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -33,35 +33,41 @@ static std::string reverse(int value) {
     return "undefined";
 }
 
-std::vector<std::pair<int, std::pair<std::string, std::vector<Bubble>>>> AwaInterpreter::run(const std::string& code, const std::string& input) {
+std::vector<std::pair<int, std::pair<std::string, std::vector<Bubble>>>> AwaInterpreter::run(const std::string& code, const std::string& input, const bool isDebug) {
     bubbleAbyss.clear();
     stacktrace.clear();
 
     data = ReadAwatalk(code);
-    /*for (int i = 0; i < data.size();) {
-        bool var = false;
+    
+    if (isDebug) {
+        for (int i = 0; i < data.size();) {
+            bool var = false;
 
-        switch (data[i]) {
-        case blo:
-        case sbm:
-        case srn:
-        case lbl:
-        case jmp:
-            var = true;
-        }
+            switch (data[i]) {
+            case blo:
+            case sbm:
+            case srn:
+            case lbl:
+            case jmp:
+                var = true;
+            }
 
-        if (var && i + 1 < data.size()) {
-            std::cout << reverse(data[i]) << " " << data[i + 1] << "\n";
-            i += 2;
+            if (var && i + 1 < data.size()) {
+                std::cout << reverse(data[i]) << " " << data[i + 1] << "\n";
+                i += 2;
+            }
+            else {
+                std::cout << reverse(data[i]) << "\n";
+                i++;
+            }
         }
-        else {
-            std::cout << reverse(data[i]) << "\n";
-            i++;
-        }
+        std::cout << std::string(100, '-') << std::endl;
+        std::cout << std::endl;
     }
-    std::cout << std::endl;*/
 
     buildLabelTable();
+
+    std::cout << "Output:" << std::endl;
     executeInstructions(input);
 
     return stacktrace;
@@ -187,7 +193,7 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
             }
             else {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Print on time " << executionTime << " attempted to print an empty stack." << std::endl;
+               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Print on time " << executionTime << " attempted to print an empty stack." << std::endl;
             }
             break;
         case pr1:
@@ -198,13 +204,13 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
             }
             else {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Print Num on time " << executionTime << " attempted to print an empty stack." << std::endl;
+               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Print Num on time " << executionTime << " attempted to print an empty stack." << std::endl;
             }
             break;
         case red: {
             if (input.empty()) {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Read on time " << executionTime << " has no input to read." << std::endl;
+               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Read on time " << executionTime << " has no input to read." << std::endl;
                 break;
             }
 
@@ -222,7 +228,7 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
         case r3d: {
             if (input.empty()) {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Read Num on time " << executionTime << " has no input to read." << std::endl;
+                std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Read Num on time " << executionTime << " has no input to read." << std::endl;
                 break;
 			}
 
@@ -251,7 +257,7 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
             }
             else {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Blow on time " << executionTime << " has no valid argument." << std::endl;
+               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Blow on time " << executionTime << " has no valid argument." << std::endl;
             }
             break;
         case sbm:
@@ -271,7 +277,7 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
             }
             else {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Submerge on time " << executionTime << " has no valid argument." << std::endl;
+               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Submerge on time " << executionTime << " has no valid argument." << std::endl;
             }
             break;
         case pop:
@@ -287,7 +293,7 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
             }
             else {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Pop on time " << executionTime << " attempted to pop on an empty stack." << std::endl;
+               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Pop on time " << executionTime << " attempted to pop on an empty stack." << std::endl;
             }
             break;
         case dpl:
@@ -303,7 +309,7 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
             }
             else {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Duplicate on time " << executionTime << " attempted to duplicate on an empty stack." << std::endl;
+               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Duplicate on time " << executionTime << " attempted to duplicate on an empty stack." << std::endl;
             }
             break;
         case srn:
@@ -316,7 +322,7 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
                     for (int idx = 0; idx < count; ++idx) {
                         if (isDouble(bubbleAbyss[bubbleAbyss.size() - 1 - idx])) {
                             totalWarnings++;
-                            std::cerr << "[" << totalWarnings << "] Warning: Surround on time " << executionTime << " attempted to surround a double bubble." << std::endl;
+                           std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] Warning: Surround on time " << executionTime << " attempted to surround a double bubble." << std::endl;
 
                             break;
                         }
@@ -332,7 +338,7 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
             }
             else {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Surround on time " << executionTime << " has no valid argument." << std::endl;
+               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Surround on time " << executionTime << " has no valid argument." << std::endl;
             }
             break;
         case mrg:
@@ -368,7 +374,7 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
             }
             else {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Merge on time " << executionTime << " attempted to merge on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
+               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Merge on time " << executionTime << " attempted to merge on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
             }
             break;
         case add:
@@ -381,7 +387,7 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
             }
             else {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Add on time " << executionTime << " attempted to add on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
+               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Add on time " << executionTime << " attempted to add on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
             }
             break;
         case sub:
@@ -394,7 +400,7 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
             }
             else {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Subtract on time " << executionTime << " attempted to subtract on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
+               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Subtract on time " << executionTime << " attempted to subtract on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
             }
             break;
         case mul:
@@ -407,7 +413,7 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
             }
             else {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Multiply on time " << executionTime << " attempted to multiply on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
+               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Multiply on time " << executionTime << " attempted to multiply on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
             }
             break;
         case div_:
@@ -420,7 +426,7 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
             }
             else {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Division on time " << executionTime << " attempted to divide on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
+               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Division on time " << executionTime << " attempted to divide on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
             }
             break;
         case cnt:
@@ -444,7 +450,7 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
             }
             else {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Label on time " << executionTime << " has no valid argument." << std::endl;
+               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Label on time " << executionTime << " has no valid argument." << std::endl;
             }
             break;
         case jmp:
@@ -456,12 +462,12 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
                 }
                 else {
                     totalWarnings++;
-                    std::cerr << "[" << totalWarnings << "] " << "Warning: Jump on time " << executionTime << " attempted to jump to a non-existing label " << label << "." << std::endl;
+                   std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Jump on time " << executionTime << " attempted to jump to a non-existing label " << label << "." << std::endl;
                 }
             }
             else {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Jump on time " << executionTime << " has no valid argument." << std::endl;
+               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Jump on time " << executionTime << " has no valid argument." << std::endl;
             }
             break;
         case eql:
@@ -476,7 +482,7 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
             }
             else {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Equal on time " << executionTime << " attempted to compare on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
+               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Equal on time " << executionTime << " attempted to compare on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
             }
             break;
         case lss:
@@ -491,7 +497,7 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
             }
             else {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Less Than on time " << executionTime << " attempted to compare on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
+               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Less Than on time " << executionTime << " attempted to compare on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
             }
             break;
         case gr8:
@@ -506,7 +512,7 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
             }
             else {
                 totalWarnings++;
-                std::cerr << "[" << totalWarnings << "] " << "Warning: Greater Than on time " << executionTime << " attempted to compare on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
+               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Greater Than on time " << executionTime << " attempted to compare on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
             }
             break;
         case trm:

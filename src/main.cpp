@@ -1,5 +1,7 @@
 ﻿#include "argparse.hpp"
 #include "AwaInterpreter.hpp"
+#include "AwaConverter.hpp"
+#include <unordered_set>
 
 const std::vector<std::string> keywords = {
     "nop", "prn", "pr1", "red", "r3d", "blw", "sbm", "pop",
@@ -70,6 +72,8 @@ static void writeStacktrace(const std::vector<std::pair<int, std::pair<std::stri
 }
 
 int main(int argc, char* argv[]) {
+    static const std::vector<std::string> argFilter = {"blw", "sbm", "srn", "lbl", "jmp"};
+
     auto args = parse_arguments(argc, argv);
     if (!args.valid) return 1;
 
@@ -80,6 +84,10 @@ int main(int argc, char* argv[]) {
     std::optional<bool> isAwalang = args.isAwalang;
     std::optional<std::string> filePath = args.filePath;
     std::string executableName = args.executableName;
+
+    if (debugMode) {
+        AwaConverter::verbose = true;
+    }
 
     if (filePath) {
         std::ifstream file(*filePath, std::ios::in | std::ios::binary);
@@ -109,15 +117,19 @@ int main(int argc, char* argv[]) {
             awa = lastValidLine;
         }
         else {
+            static const std::unordered_set<std::string> keywordSet(keywords.begin(), keywords.end());
+            static const std::unordered_set<std::string> argFilterSet(argFilter.begin(), argFilter.end());
             std::istringstream iss(awa);
             std::string line, filtered;
-            
             while (std::getline(iss, line)) {
-                for (const auto& kw : keywords) {
-                    if (line.find(kw) != std::string::npos) {
-                        filtered += line + "\n";
-                        break;
+                std::istringstream linestream(line);
+                std::string instruction, argument;
+                linestream >> instruction >> argument;
+                if (!instruction.empty() && keywordSet.count(instruction)) {
+                    if (!instruction.empty() && argFilterSet.count(instruction)) {
+                        instruction += " " + argument;
                     }
+                    filtered += instruction + "; ";
                 }
             }
             awa = filtered;
@@ -127,8 +139,16 @@ int main(int argc, char* argv[]) {
         isAwalang = determineAwaType(awa);
     }
 
+    if (debugMode) std::cout << awa << std::endl << std::string(100, '-') << std::endl;
+
+    if (!isAwalang.value()) {
+		awa = AwaConverter::convertCode(awa);
+        
+		if (debugMode) std::cout << awa << std::endl << std::string(100, '-') << std::endl;
+    }
+
     AwaInterpreter interpreter;
-    std::vector<std::pair<int, std::pair<std::string, std::vector<Bubble>>>> stacktrace = interpreter.run(awa, input);
+    std::vector<std::pair<int, std::pair<std::string, std::vector<Bubble>>>> stacktrace = interpreter.run(awa, input, debugMode);
 
     std::cout << std::endl;
 

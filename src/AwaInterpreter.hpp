@@ -63,7 +63,7 @@ enum Awatisms {
 
 class AwaInterpreter {
 public:
-    std::vector<std::pair<int, std::pair<std::string, std::vector<Bubble>>>> run(const std::string& code, const std::string& input);
+    std::vector<std::pair<int, std::pair<std::string, std::vector<Bubble>>>> run(const std::string& code, const std::string& input, const bool isDebug);
 private:
     std::vector<int> ReadAwatalk(const std::string& awaBlock);
     void buildLabelTable();

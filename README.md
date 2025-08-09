@@ -163,7 +163,7 @@ git clone https://github.com/anfogy/AWA5.0-Interpreter.git
 cd AWA5.0-Interpreter
 make
 ```
-This would require `g++` and `make` to be installed, if you don't have them, you can install `build-essential` using your package manager. \
+This would require `g++`, `make`, `binutils-gold` to be installed, if you don't have them, you can install `build-essential` and `binutils-gold` using your package manager. \
 `git` is not essential, you can download the repository as a ZIP file and extract it. \
 \
 Once built, you can run the interpreter with the following command:

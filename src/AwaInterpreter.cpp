@@ -202,6 +202,12 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
             }
             break;
         case red: {
+            if (input.empty()) {
+                totalWarnings++;
+                std::cerr << "[" << totalWarnings << "] " << "Warning: Read on time " << executionTime << " has no input to read." << std::endl;
+                break;
+            }
+
             BubbleVector bubbles;
             for (auto it = input.rbegin(); it != input.rend(); ++it) {
                 char c = *it;
@@ -214,6 +220,12 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
             break;
         }
         case r3d: {
+            if (input.empty()) {
+                totalWarnings++;
+                std::cerr << "[" << totalWarnings << "] " << "Warning: Read Num on time " << executionTime << " has no input to read." << std::endl;
+                break;
+			}
+
             std::istringstream iss(input);
             std::string token;
             int number = 0;

@@ -9,9 +9,9 @@ A C++ port of [Temp Tempai's AWA5.0 Interpreter](https://github.com/TempTempai/A
 <details>
 <summary>Basics</summary>
 
-- [ ] Support for all instructions(Awatisms) stated in [The AWA5.0 Specification](https://github.com/TempTempai/AWA5.0/blob/main/Documentation/AWA5.0%20Specification.pdf)
-    - [ ] System
-        - [ ] Read(`red`) and ReadNum(`r3d`) implementations
+- [x] Support for all instructions(Awatisms) stated in [The AWA5.0 Specification](https://github.com/TempTempai/AWA5.0/blob/main/Documentation/AWA5.0%20Specification.pdf)
+    - [x] System
+        - [x] Read(`red`) and ReadNum(`r3d`) implementations
         - [x] Other system instructions
     - [x] Pile manipulation
     - [x] Arithmetic
@@ -30,7 +30,7 @@ A C++ port of [Temp Tempai's AWA5.0 Interpreter](https://github.com/TempTempai/A
             - [ ] Awably support
 
 - [ ] Debug tools
-    - [ ] Stack(Bubble Abyss) visualizer
+    - [x] Stack(Bubble Abyss) trace
     - [ ] Per-line execution
     - [ ] Speed profiler for sections
 
@@ -62,6 +62,7 @@ This port has multiple differences from the original AWA5.0 interpreter.
 
 <details>
 <summary>Out-of-bounds access handling</summary>
+
 Let's compare the code for handling Equal(`eql`) between the original AWA5.0 interpreter and this port.
 
 The original AWA5.0 interpreter:
@@ -105,6 +106,7 @@ This behavior applies to all instructions, illegal instructions will be ignored,
 
 <details>
 <summary>Error handling</summary>
+
 The AWA5.0 Specification states that the language is perfect and does not need error handling. \
 This statement can be easily accomplished for the original interpreter, as it's running on JavaScript. However, this port is written in C++, checks are needed to prevent undefined behaviors. \
 To follow the specifications, while wanted to have something to be more clear for debugging, I decided to throw warnings instead of errors to alert the user. It's now called "Warning handling". awa
@@ -112,6 +114,7 @@ To follow the specifications, while wanted to have something to be more clear fo
 
 <details>
 <summary>Undefined behaviors</summary>
+
 While the port mostly ignores undefined behaviors, treating it as a `nop` instruction. There're some redefined behaviors when came to such condition that is unstated in the specification. \
 \
 General undefined bahaviors:
@@ -126,6 +129,7 @@ Instruction-specific undefined behaviors:
 | Count(`cnt`)               | Trying to count on an empty stack                       | Blow 0                                      | Blow 0                                       |
 | Jump(`jmp`)                | Jumping to an invalid label                             | Ignored                                     | Ignored with a warning                       |
 | Merge(`mrg`)<sup>[1]</sup> | Merging two simple bubbles                              | Merge two into a double bubble              | Merge two into a double bubble               |
+| Read(`red`)/Read Num(`r3d`)| Empty input                                             | An empty double bubble will be pushed       | Ignored with a warning                       |
 
 [1]: The reason why Merge(`mrg`) is on the list is that the AWA5.0 Specification states the instruction should act like Add(`4dd`) if two simple bubbles are present. But the original and other 3rd party interpreters treat it as a merge into a double bubble instead, so I decided to maintain this as a feature, instead of fixing it.
 </details>

@@ -11,17 +11,19 @@ static std::optional<bool> determineAwaType(const std::string& input) {
     return true;
 }
 
-static void writeStacktrace(const std::vector<std::pair<std::string, std::vector<Bubble>>>& stacktrace) {
+static void writeStacktrace(const std::vector<std::pair<int, std::pair<std::string, std::vector<Bubble>>>>& stacktrace) {
     if (stacktrace.empty()) {
         return;
 	}
+    std::cout << std::endl;
 
     std::ofstream ofs;
     ofs.open("stacktrace.txt", std::ofstream::out | std::ofstream::trunc);
     if (ofs.is_open()) {
-        for (std::pair<std::string, std::vector<Bubble>> pair : stacktrace) {
-            std::string instruction = pair.first;
-            std::vector<Bubble> stack = pair.second;
+        for (std::pair<int, std::pair<std::string, std::vector<Bubble>>> outerPairs : stacktrace) {
+			int executionTime = outerPairs.first;
+            std::string instruction = outerPairs.second.first;
+            std::vector<Bubble> stack = outerPairs.second.second;
 
             std::string line;
             for (int p = 0; p < stack.size(); p++) {
@@ -53,13 +55,16 @@ static void writeStacktrace(const std::vector<std::pair<std::string, std::vector
             }
             line.insert(0, instruction);
 
+            std::ostringstream oss;
+            oss << "[" << std::setfill('0') << std::setw(4) << executionTime << "] ";
+            line.insert(0, oss.str());
+
             ofs << line;
             ofs << std::endl;
         }
     }
-    else {
-        abort();
-    }
+
+    std::cout << "Stacktrace written to stacktrace.txt" << std::endl;
 
     ofs.close();
 }
@@ -100,8 +105,10 @@ int main(int argc, char* argv[]) {
                     lastValidLine = trimmed;
                 }
             }
+
             awa = lastValidLine;
-        } else {
+        }
+        else {
             std::istringstream iss(awa);
             std::string line, filtered;
             
@@ -115,12 +122,13 @@ int main(int argc, char* argv[]) {
             }
             awa = filtered;
         }
-    } else {
+    }
+    else {
         isAwalang = determineAwaType(awa);
     }
 
     AwaInterpreter interpreter;
-    std::vector<std::pair<std::string, std::vector<Bubble>>> stacktrace = interpreter.run(awa);
+    std::vector<std::pair<int, std::pair<std::string, std::vector<Bubble>>>> stacktrace = interpreter.run(awa, input);
 
     std::cout << std::endl;
 

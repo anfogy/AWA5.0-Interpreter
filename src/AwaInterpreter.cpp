@@ -1,8 +1,4 @@
 #include "AwaInterpreter.hpp"
-#include <algorithm>
-#include <iostream>
-#include <cmath>
-#include <sstream>
 
 static std::map<int, std::string> AwatismsMap = {
     {0, "nop"},
@@ -37,7 +33,7 @@ static std::string reverse(int value) {
     return "undefined";
 }
 
-std::vector<std::pair<std::string, std::vector<Bubble>>> AwaInterpreter::run(const std::string& code) {
+std::vector<std::pair<int, std::pair<std::string, std::vector<Bubble>>>> AwaInterpreter::run(const std::string& code, const std::string& input) {
     bubbleAbyss.clear();
     stacktrace.clear();
 
@@ -66,7 +62,7 @@ std::vector<std::pair<std::string, std::vector<Bubble>>> AwaInterpreter::run(con
     std::cout << std::endl;*/
 
     buildLabelTable();
-    executeInstructions();
+    executeInstructions(input);
 
     return stacktrace;
 }
@@ -173,7 +169,7 @@ void AwaInterpreter::buildLabelTable() {
     }
 }
 
-void AwaInterpreter::executeInstructions() {
+void AwaInterpreter::executeInstructions(const std::string& input) {
     size_t i = 0;
     bool terminate = false;
     unsigned int executionTime = 0;
@@ -206,14 +202,34 @@ void AwaInterpreter::executeInstructions() {
             }
             break;
         case red: {
-            //TODO: Proper input handling(AwaSCII)
-            bubbleAbyss.push_back(Bubble(0));
+            BubbleVector bubbles;
+            for (auto it = input.rbegin(); it != input.rend(); ++it) {
+                char c = *it;
+                size_t idx = AwaSCII.find(c);
+                if (idx != std::string::npos) {
+                    bubbles.push_back(Bubble(static_cast<int>(idx)));
+                }
+            }
+            bubbleAbyss.push_back(Bubble(bubbles));
             break;
         }
         case r3d: {
-            // TODO: Proper input handling(Integer)
-            bubbleAbyss.push_back(Bubble(0));
-
+            std::istringstream iss(input);
+            std::string token;
+            int number = 0;
+            bool found = false;
+            while (iss >> token) {
+                size_t pos = 0;
+                while (pos < token.size() && (token[pos] == '+' || token[pos] == '-')) ++pos;
+                if (pos < token.size() && std::isdigit(token[pos])) {
+                    try {
+                        number = std::stoi(token);
+                        found = true;
+                        break;
+                    } catch (...) {}
+                }
+            }
+            bubbleAbyss.push_back(Bubble(found ? number : 0));
             break;
         }
         case blo:
@@ -502,7 +518,7 @@ void AwaInterpreter::executeInstructions() {
         executionTime++;
         i++;
 
-        stacktrace.push_back(std::make_pair(reverse(op) + " " + argument, bubbleAbyss));
+        stacktrace.push_back(std::make_pair(executionTime, std::make_pair(reverse(op) + " " + argument, bubbleAbyss)));
     }
 }
 

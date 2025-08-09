@@ -63,11 +63,11 @@ enum Awatisms {
 
 class AwaInterpreter {
 public:
-    std::vector<std::pair<std::string, std::vector<Bubble>>> run(const std::string& code);
+    std::vector<std::pair<int, std::pair<std::string, std::vector<Bubble>>>> run(const std::string& code, const std::string& input);
 private:
     std::vector<int> ReadAwatalk(const std::string& awaBlock);
     void buildLabelTable();
-    void executeInstructions();
+    void executeInstructions(const std::string& input);
     void skipNextInstruction(size_t& i);
     Bubble addBubbles(const Bubble& a, const Bubble& b);
     Bubble subBubbles(const Bubble& a, const Bubble& b);
@@ -78,6 +78,6 @@ private:
     std::map<int, size_t> lblTable;
     std::vector<int> data;
     unsigned int totalWarnings = 0;
-    std::vector<std::pair<std::string, std::vector<Bubble>>> stacktrace;
+    std::vector<std::pair<int, std::pair<std::string, std::vector<Bubble>>>> stacktrace;
     const std::string AwaSCII = "AWawJELYHOSIUMjelyhosiumPCNTpcntBDFGRbdfgr0123456789 .,!'()~_/;\n";
 };

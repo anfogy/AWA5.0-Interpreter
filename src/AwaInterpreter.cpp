@@ -585,7 +585,8 @@ Bubble AwaInterpreter::addBubbles(const Bubble& a, const Bubble& b) {
         BubbleVector newList;
         size_t minSize = std::min(listA.size(), listB.size());
         for (size_t i = 0; i < minSize; i++) {
-            newList.push_back(addBubbles(listA[i], listB[i]));
+            BubbleVector temp = getList(addBubbles(listA[i], listB[i]));
+            newList.insert(newList.end(), temp.begin(), temp.end());
         }
         return Bubble(newList);
     }
@@ -615,7 +616,8 @@ Bubble AwaInterpreter::subBubbles(const Bubble& a, const Bubble& b) {
         BubbleVector newList;
         size_t minSize = std::min(listA.size(), listB.size());
         for (size_t i = 0; i < minSize; i++) {
-            newList.push_back(subBubbles(listA[i], listB[i]));
+            BubbleVector temp = getList(subBubbles(listA[i], listB[i]));
+            newList.insert(newList.end(), temp.begin(), temp.end());
         }
         return Bubble(newList);
     }
@@ -645,7 +647,8 @@ Bubble AwaInterpreter::mulBubbles(const Bubble& a, const Bubble& b) {
         BubbleVector newList;
         size_t minSize = std::min(listA.size(), listB.size());
         for (size_t i = 0; i < minSize; i++) {
-            newList.push_back(mulBubbles(listA[i], listB[i]));
+            BubbleVector temp = getList(mulBubbles(listA[i], listB[i]));
+            newList.insert(newList.end(), temp.begin(), temp.end());
         }
         return Bubble(newList);
     }
@@ -689,7 +692,8 @@ Bubble AwaInterpreter::divBubbles(const Bubble& a, const Bubble& b) {
         BubbleVector newList;
         size_t minSize = std::min(listA.size(), listB.size());
         for (size_t i = 0; i < minSize; i++) {
-            newList.push_back(divBubbles(listA[i], listB[i]));
+            BubbleVector temp = getList(divBubbles(listA[i], listB[i]));
+            newList.insert(newList.end(), temp.begin(), temp.end());
         }
         return Bubble(newList);
     }

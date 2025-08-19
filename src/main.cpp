@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
     if (filePath) {
         std::ifstream file(*filePath, std::ios::in | std::ios::binary);
         if (!file) {
-            std::cerr << "Error: Unable to open " << *filePath << std::endl;
+            std::cerr << "Error: Unable to read " << *filePath << std::endl;
 
             return 1;
         }

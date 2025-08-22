@@ -39,7 +39,7 @@ static std::string join(const std::vector<std::string>& parts, const std::string
     return oss.str();
 }
 
-class AwaConverter {
+class Awabler {
 public:
     static bool verbose;
 
@@ -53,5 +53,5 @@ public:
     static int convertAwatism(const std::string& instruction);
     static int convertAwaSCII(const std::string& byte);
     static LineResult convertLine(const std::string& line);
-    static std::string convertCode(std::string& code);
+    static std::string convertCode(std::string& code, const bool legacyMode);
 };

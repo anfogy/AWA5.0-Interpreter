@@ -14,6 +14,7 @@ struct ParsedArguments {
     std::optional<std::string> filePath = std::nullopt;
     std::string executableName;
     bool valid = true;
+	bool legacyMode = false;
 };
 
 inline void print_usage(const std::string& executableName) {
@@ -22,22 +23,23 @@ inline void print_usage(const std::string& executableName) {
     std::cerr << "       " << executableName << " [Options] --file <Path>" << std::endl;
     std::cerr << std::endl;
     std::cerr << "Options: " << std::endl;
-    std::cerr << "       " << " --interactive            Enter interactive mode" << std::endl;
-    std::cerr << "       " << " -I, --input              Use the next argument as input for read" << std::endl;
+    std::cerr << "       " << " --interactive            Enter interactive mode(not implemented)" << std::endl;
+    std::cerr << "       " << " -I,  --input             Use the next argument as input for all reads" << std::endl;
     std::cerr << "       " << " -Al, --awalang           Enforce interpreter to treat inputs as Awalang" << std::endl;
     std::cerr << "       " << " -Ab, --awably            Enforce interpreter to treat inputs as Awably" << std::endl;
+    std::cerr << "       " << " -L,  --legacy            Enforce Awabler to generate legacy Awalang" << std::endl;
     std::cerr << "       " << " -D,  --debug             Generate extra information on the program" << std::endl;
-    std::cerr << "       " << " -H, --help               Display this message" << std::endl;
+    std::cerr << "       " << " -H,  --help              Display this message" << std::endl;
     std::cerr << std::endl;
     std::cerr << "Examples: " << std::endl;
     std::cerr << "       " << executableName << " --awalang --file ./examples/4-elements_stack_reversal_via_loop.awa" << std::endl;
     std::cerr << "    The above command will execute the .awa file as Awalang." << std::endl;
     std::cerr << std::endl;
     std::cerr << "       " << executableName << " --awably --file ./examples/hello_world.awa -D" << std::endl;
-    std::cerr << "    The above command will execute the .awa file as Awably and output debug informations" << std::endl;
+    std::cerr << "    The above command will execute the .awa file as Awably and output debug informations." << std::endl;
     std::cerr << std::endl;
-    std::cerr << "       " << executableName << " --awably \"red; prn;\" --input \"Hello, world.\"" << std::endl;
-    std::cerr << "    The above command will execute \"red; prn;\" as Awably with the input \"Hello, world.\"." << std::endl;
+    std::cerr << "       " << executableName << " --awably \"red; prn;\" --input \"Hello, world.\" -L" << std::endl;
+    std::cerr << "    The above command will execute \"red; prn;\" as Awably in legacy mode, with the input \"Hello, world.\"." << std::endl;
 }
 
 inline ParsedArguments parse_arguments(int argc, char* argv[]) {
@@ -65,12 +67,15 @@ inline ParsedArguments parse_arguments(int argc, char* argv[]) {
         else if (arg == "--interactive") {
             args.interactiveMode = true;
         }
+        else if (arg == "-L" || arg == "--legacy") {
+            args.legacyMode = true;
+		}
         else if (arg == "-I" || arg == "--input") {
             if (i + 1 < argc) {
                 args.input = argv[++i];
             }
             else {
-                std::cerr << "Error: --input requires an argument." << std::endl;
+                std::cerr << "[ArgumentParser] Error: --input requires an argument." << std::endl;
                 print_usage(args.executableName);
                 args.valid = false;
 
@@ -91,7 +96,7 @@ inline ParsedArguments parse_arguments(int argc, char* argv[]) {
                 args.filePath = argv[++i];
             }
             else {
-                std::cerr << "Error: --file requires a path argument." << std::endl;
+                std::cerr << "[ArgumentParser] Error: --file requires a path argument." << std::endl;
                 print_usage(args.executableName);
                 args.valid = false;
 
@@ -99,7 +104,7 @@ inline ParsedArguments parse_arguments(int argc, char* argv[]) {
             }
         }
         else if (arg.starts_with("-")) {
-            std::cerr << "Unknown option: " << arg << std::endl;
+            std::cerr << "[ArgumentParser] Error: Unknown option: " << arg << std::endl;
             print_usage(args.executableName);
             args.valid = false;
 

@@ -1,9 +1,9 @@
-#include "AwaConverter.hpp"
+#include "Awabler.hpp"
 
-bool AwaConverter::verbose = false;
+bool Awabler::verbose = false;
 static int totalWarnings = 0;
 
-std::string AwaConverter::convertAwatalk(int number, int length) {
+std::string Awabler::convertAwatalk(int number, int length) {
     number = number & ((1 << length) - 1);
     std::string binStr;
     for (int i = length - 1; i >= 0; i--) {
@@ -20,7 +20,7 @@ std::string AwaConverter::convertAwatalk(int number, int length) {
     return binStr;
 }
 
-int AwaConverter::convertAwatism(const std::string& instruction) {
+int Awabler::convertAwatism(const std::string& instruction) {
     static const std::vector<std::string> lookup = {
         "nop", "prn", "pr1", "red", "r3d", "blw", "sbm", "pop", "dpl", "srn", "mrg",
         "4dd", "sub", "mul", "div", "cnt", "lbl", "jmp", "eql", "lss", "gr8", "trm"
@@ -38,7 +38,7 @@ int AwaConverter::convertAwatism(const std::string& instruction) {
     return (index == 21) ? 31 : index;
 }
 
-int AwaConverter::convertAwaSCII(const std::string& byte) {
+int Awabler::convertAwaSCII(const std::string& byte) {
     static const std::vector<std::string> lookup = {
         "A", "W", "a", "w", "J", "E", "L", "Y", "H", "O",
         "S", "I", "U", "M", "j", "e", "l", "y", "h", "o",
@@ -59,7 +59,7 @@ int AwaConverter::convertAwaSCII(const std::string& byte) {
     return static_cast<int>(std::distance(lookup.begin(), it));
 }
 
-AwaConverter::LineResult AwaConverter::convertLine(const std::string& line) {
+Awabler::LineResult Awabler::convertLine(const std::string& line) {
     static const std::vector<std::string> s8 = {"blw"};
     static const std::vector<std::string> u5 = {"sbm", "srn", "lbl", "jmp"};
 
@@ -118,7 +118,8 @@ AwaConverter::LineResult AwaConverter::convertLine(const std::string& line) {
     return {convInstr + " " + convParam, instrCode, parameter};
 }
 
-std::string AwaConverter::convertCode(std::string& code) {
+std::string Awabler::convertCode(std::string& code, const bool legacyMode) {
+	if (legacyMode) totalWarnings++;
     replace(code, ";", "\n");
 
     std::istringstream iss(code);

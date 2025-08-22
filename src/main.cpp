@@ -1,6 +1,6 @@
 ﻿#include "argparse.hpp"
 #include "AwaInterpreter.hpp"
-#include "AwaConverter.hpp"
+#include "Awabler.hpp"
 #include <unordered_set>
 
 const std::vector<std::string> keywords = {
@@ -9,8 +9,52 @@ const std::vector<std::string> keywords = {
     "lbl", "jmp", "eql", "lss", "gr8", "trm"
 };
 
+static const std::vector<std::string> argFilter = { "blw", "sbm", "srn", "lbl", "jmp" };
+
 static std::optional<bool> determineAwaType(const std::string& input) {
+    for (const auto& element : keywords) {
+        if (element.find(input) != std::string::npos) {
+            return false;
+        }
+    }
+
     return true;
+}
+
+static void filterInput(std::string& awa, std::optional<bool> isAwalang) {
+    if (isAwalang.value()) {
+        std::istringstream iss(awa);
+        std::string line, lastValidLine;
+        while (std::getline(iss, line)) {
+            std::string trimmed = line;
+            trimmed.erase(trimmed.find_last_not_of(" \t\r\n") + 1);
+            trimmed.erase(0, trimmed.find_first_not_of(" \t\r\n"));
+            if (!trimmed.empty()) {
+                lastValidLine = trimmed;
+            }
+        }
+
+        awa = lastValidLine;
+    }
+    else {
+        static const std::unordered_set<std::string> keywordSet(keywords.begin(), keywords.end());
+        static const std::unordered_set<std::string> argFilterSet(argFilter.begin(), argFilter.end());
+		replace(awa, ";", "\n");
+        std::istringstream iss(awa);
+        std::string line, filtered;
+        while (std::getline(iss, line)) {
+            std::istringstream linestream(line);
+            std::string instruction, argument;
+            linestream >> instruction >> argument;
+            if (!instruction.empty() && keywordSet.count(instruction)) {
+                if (!instruction.empty() && argFilterSet.count(instruction)) {
+                    instruction += " " + argument;
+                }
+                filtered += instruction + "; ";
+            }
+        }
+        awa = filtered;
+    }
 }
 
 static void writeStacktrace(const std::vector<std::pair<int, std::pair<std::string, std::vector<Bubble>>>>& stacktrace) {
@@ -72,8 +116,6 @@ static void writeStacktrace(const std::vector<std::pair<int, std::pair<std::stri
 }
 
 int main(int argc, char* argv[]) {
-    static const std::vector<std::string> argFilter = {"blw", "sbm", "srn", "lbl", "jmp"};
-
     auto args = parse_arguments(argc, argv);
     if (!args.valid) return 1;
 
@@ -81,12 +123,13 @@ int main(int argc, char* argv[]) {
     std::string input = args.input;
     bool interactiveMode = args.interactiveMode;
     bool debugMode = args.debugMode;
+	bool legacyMode = args.legacyMode;
     std::optional<bool> isAwalang = args.isAwalang;
     std::optional<std::string> filePath = args.filePath;
     std::string executableName = args.executableName;
 
     if (debugMode) {
-        AwaConverter::verbose = true;
+        Awabler::verbose = true;
     }
 
     if (filePath) {
@@ -102,47 +145,19 @@ int main(int argc, char* argv[]) {
     }
 
     if (isAwalang.has_value()) {
-        if (isAwalang.value()) {
-            std::istringstream iss(awa);
-            std::string line, lastValidLine;
-            while (std::getline(iss, line)) {
-                std::string trimmed = line;
-                trimmed.erase(trimmed.find_last_not_of(" \t\r\n") + 1);
-                trimmed.erase(0, trimmed.find_first_not_of(" \t\r\n"));
-                if (!trimmed.empty()) {
-                    lastValidLine = trimmed;
-                }
-            }
-
-            awa = lastValidLine;
-        }
-        else {
-            static const std::unordered_set<std::string> keywordSet(keywords.begin(), keywords.end());
-            static const std::unordered_set<std::string> argFilterSet(argFilter.begin(), argFilter.end());
-            std::istringstream iss(awa);
-            std::string line, filtered;
-            while (std::getline(iss, line)) {
-                std::istringstream linestream(line);
-                std::string instruction, argument;
-                linestream >> instruction >> argument;
-                if (!instruction.empty() && keywordSet.count(instruction)) {
-                    if (!instruction.empty() && argFilterSet.count(instruction)) {
-                        instruction += " " + argument;
-                    }
-                    filtered += instruction + "; ";
-                }
-            }
-            awa = filtered;
-        }
+		filterInput(awa, isAwalang);
     }
     else {
         isAwalang = determineAwaType(awa);
+        filterInput(awa, isAwalang);
     }
 
     if (debugMode) std::cout << awa << std::endl << std::string(100, '-') << std::endl;
 
     if (!isAwalang.value()) {
-		awa = AwaConverter::convertCode(awa);
+        if (!legacyMode) std::cerr << "[Awabler] [0001] Warning: You're currently compiling Awalang code under AWA5.0++, the code generated may lead to compatibility issues with other interpreters. Use the \"--legacy\" option for legacy Awabling. Find more details in the README." << std::endl;
+
+		awa = Awabler::convertCode(awa, legacyMode);
         
 		if (debugMode) std::cout << awa << std::endl << std::string(100, '-') << std::endl;
     }

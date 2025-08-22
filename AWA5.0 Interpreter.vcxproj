@@ -131,7 +131,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\AwaConverter.cpp" />
+    <ClCompile Include="src\Awabler.cpp" />
     <ClCompile Include="src\AwaInterpreter.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
@@ -141,7 +141,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\argparse.hpp" />
-    <ClInclude Include="src\AwaConverter.hpp" />
+    <ClInclude Include="src\Awabler.hpp" />
     <ClInclude Include="src\AwaInterpreter.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

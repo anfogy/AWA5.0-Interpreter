@@ -83,14 +83,21 @@ std::vector<int> AwaInterpreter::ReadAwatalk(const std::string& awaBlock) {
         }
     }
 
+	bool isLegacy = false;
     size_t awaIndex = 0;
-    for (; awaIndex < cleanedAwas.size() - 3; awaIndex++) {
+    for (; awaIndex < cleanedAwas.size() - 5; awaIndex++) {
+        if (cleanedAwas.substr(awaIndex, 5) == "awawa") {
+            awaIndex += 5;
+            break;
+        }
+
         if (cleanedAwas.substr(awaIndex, 3) == "awa") {
+            isLegacy = true;
             awaIndex += 3;
             break;
         }
     }
-    if (awaIndex >= cleanedAwas.size() - 3) {
+    if (awaIndex >= cleanedAwas.size() - (isLegacy ? 3 : 5)) {
         return instructions;
     }
 

@@ -42,16 +42,18 @@ static std::string join(const std::vector<std::string>& parts, const std::string
 class Awabler {
 public:
     static bool verbose;
+    static bool legacy;
+    static std::string convertCode(std::string& code);
 
+private:
     struct LineResult {
         std::string converted;
         int instructionCode;
         std::optional<int> parameter;
     };
-
+    
     static std::string convertAwatalk(int number, int length = 8);
     static int convertAwatism(const std::string& instruction);
-    static int convertAwaSCII(const std::string& byte);
+    static int convertAwaSCII(std::string& byte);
     static LineResult convertLine(const std::string& line);
-    static std::string convertCode(std::string& code, const bool legacyMode);
 };

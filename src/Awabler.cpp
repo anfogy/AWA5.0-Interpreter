@@ -1,6 +1,7 @@
 #include "Awabler.hpp"
 
 bool Awabler::verbose = false;
+bool Awabler::legacy = false;
 static int totalWarnings = 0;
 
 std::string Awabler::convertAwatalk(int number, int length) {
@@ -12,6 +13,7 @@ std::string Awabler::convertAwatalk(int number, int length) {
     }
 
     replace(binStr, "01", "awawa ");
+    replace(binStr, "11", "wawa ");
     replace(binStr, "0", "awa ");
     replace(binStr, "1", "wa ");
     replace(binStr, "wa wa", "wawa");
@@ -38,25 +40,55 @@ int Awabler::convertAwatism(const std::string& instruction) {
     return (index == 21) ? 31 : index;
 }
 
-int Awabler::convertAwaSCII(const std::string& byte) {
-    static const std::vector<std::string> lookup = {
-        "A", "W", "a", "w", "J", "E", "L", "Y", "H", "O",
-        "S", "I", "U", "M", "j", "e", "l", "y", "h", "o",
-        "s", "i", "u", "m", "P", "C", "N", "T", "p", "c",
-        "n", "t", "B", "D", "F", "G", "R", "b", "d", "f",
-        "g", "r", "0", "1", "2", "3", "4", "5", "6", "7",
-        "8", "9", "space", ".", ",", "!", "'", "(", ")", "~",
-        "_", "/", ";", "\\n"
-    };
+int Awabler::convertAwaSCII(std::string& byte) {
+    if (Awabler::legacy) {
+        static const std::vector<std::string> lookup = {
+            "A", "W", "a", "w", "J", "E", "L", "Y", "H", "O",
+            "S", "I", "U", "M", "j", "e", "l", "y", "h", "o",
+            "s", "i", "u", "m", "P", "C", "N", "T", "p", "c",
+            "n", "t", "B", "D", "F", "G", "R", "b", "d", "f",
+            "g", "r", "0", "1", "2", "3", "4", "5", "6", "7",
+            "8", "9", "space", ".", ",", "!", "'", "(", ")", "~",
+            "_", "/", ";", "\\n"
+        };
 
-    auto it = std::find(lookup.begin(), lookup.end(), byte);
-    if (it == lookup.end()) {
-        totalWarnings++;
-        std::cerr << "[Awabler] " << "[" <<  totalWarnings << "] Warning: Character \"" << byte << "\" is not found in the AwaSCII table." << std::endl;
-        return -1;
+        auto it = std::find(lookup.begin(), lookup.end(), byte);
+        if (it == lookup.end()) {
+            totalWarnings++;
+            std::cerr << "[Awabler] " << "[" << totalWarnings << "] Warning: Token \"" << byte << "\" is not found in the AwaSCII table." << std::endl;
+            return -1;
+        }
+
+        return static_cast<int>(std::distance(lookup.begin(), it));
     }
+    else {
+        if (byte == "space") {
+            return 32;
+        }
+        else if (byte == "\\t") {
+            return 9;
+        }
+        else if (byte == "\\n") {
+            return 10; 
+        }
+        else if (byte == "\\r") {
+            return 13;
+        }
+        else if (byte.length() != 1) {
+            totalWarnings++;
+            std::cerr << "[Awabler] [" << totalWarnings << "] Warning: Token \"" << byte << "\" is not a single character and is not recognized as a special token (space or \\n)." << std::endl;
+            return -1;
+        }
 
-    return static_cast<int>(std::distance(lookup.begin(), it));
+        unsigned char c = static_cast<unsigned char>(byte[0]);
+        if (c > 127 || c < 0) {
+            totalWarnings++;
+            std::cerr << "[Awabler] [" << totalWarnings << "] Warning: Character \"" << byte << "\" is outside the valid ASCII range (0-127)." << std::endl;
+            return -1;
+        }
+
+        return static_cast<int>(c);
+    }
 }
 
 Awabler::LineResult Awabler::convertLine(const std::string& line) {
@@ -118,8 +150,8 @@ Awabler::LineResult Awabler::convertLine(const std::string& line) {
     return {convInstr + " " + convParam, instrCode, parameter};
 }
 
-std::string Awabler::convertCode(std::string& code, const bool legacyMode) {
-	if (legacyMode) totalWarnings++;
+std::string Awabler::convertCode(std::string& code) {
+	if (Awabler::legacy) totalWarnings++;
     replace(code, ";", "\n");
 
     std::istringstream iss(code);
@@ -136,7 +168,7 @@ std::string Awabler::convertCode(std::string& code, const bool legacyMode) {
         results.push_back(convertLine(ln));
     }
 
-    std::vector<std::string> parts = {"awa"};
+    std::vector<std::string> parts = {Awabler::legacy ? "awa" : "awawa"};
     for (const auto& res : results) {
         if (!res.converted.empty())
             parts.push_back(res.converted);

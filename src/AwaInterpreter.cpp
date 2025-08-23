@@ -83,21 +83,20 @@ std::vector<int> AwaInterpreter::ReadAwatalk(const std::string& awaBlock) {
         }
     }
 
-	bool isLegacy = false;
     size_t awaIndex = 0;
-    for (; awaIndex < cleanedAwas.size() - 5; awaIndex++) {
-        if (cleanedAwas.substr(awaIndex, 5) == "awawa") {
+    for (; awaIndex < cleanedAwas.size() - 6; awaIndex++) {
+        if (cleanedAwas.substr(awaIndex, 6) == "awawa ") {
             awaIndex += 5;
             break;
         }
 
-        if (cleanedAwas.substr(awaIndex, 3) == "awa") {
-            isLegacy = true;
+        if (cleanedAwas.substr(awaIndex, 4) == "awa ") {
+            AwaInterpreter::legacy = true;
             awaIndex += 3;
             break;
         }
     }
-    if (awaIndex >= cleanedAwas.size() - (isLegacy ? 3 : 5)) {
+    if (awaIndex >= cleanedAwas.size() - (AwaInterpreter::legacy ? 3 : 5)) {
         return instructions;
     }
 
@@ -221,15 +220,28 @@ void AwaInterpreter::executeInstructions(const std::string& input) {
                 break;
             }
 
-            BubbleVector bubbles;
-            for (auto it = input.rbegin(); it != input.rend(); ++it) {
-                char c = *it;
-                size_t idx = AwaSCII.find(c);
-                if (idx != std::string::npos) {
-                    bubbles.push_back(Bubble(static_cast<int>(idx)));
+            if (AwaInterpreter::legacy) {
+                BubbleVector bubbles;
+                for (auto it = input.rbegin(); it != input.rend(); ++it) {
+                    char c = *it;
+                    size_t idx = AwaSCII.find(c);
+                    if (idx != std::string::npos) {
+                        bubbles.push_back(Bubble(static_cast<int>(idx)));
+                    }
                 }
+                bubbleAbyss.push_back(Bubble(bubbles));
             }
-            bubbleAbyss.push_back(Bubble(bubbles));
+            else
+            {
+                BubbleVector bubbles;
+                for (auto it = input.rbegin(); it != input.rend(); ++it) {
+                    unsigned char uc = static_cast<unsigned char>(*it);
+                    if (uc < 128 || uc > 0) {
+                        bubbles.push_back(Bubble(static_cast<int>(uc)));
+                    }
+                }
+                bubbleAbyss.push_back(Bubble(bubbles));
+            }
             break;
         }
         case r3d: {
@@ -713,9 +725,33 @@ void AwaInterpreter::printBubble(const Bubble& bubble, bool numbersOut) {
         }
         else {
             int idx = getInt(bubble);
-            if (idx >= 0 && static_cast<size_t>(idx) < AwaSCII.size()) {
-                std::cout << AwaSCII[idx];
+            if (AwaInterpreter::legacy) {
+                if (idx >= 0 && static_cast<size_t>(idx) < AwaSCII.size()) {
+                    std::cout << AwaSCII[idx];
+                }
             }
+            else {
+                switch (idx) {
+                case 0:
+                    return;
+                case 9:
+					std::cout << "\t";
+                    return;
+                case 10:
+					std::cout << "\n";
+                    return;
+                case 13:
+                    std::cout << "\r";
+                    return;
+                default:
+                    if (idx >= 32 && idx <= 126) {
+                        std::cout << static_cast<char>(idx);
+                    }
+                    else {
+                        std::cout << "?";
+                    }
+                }
+			}
         }
     }
     else {

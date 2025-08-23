@@ -128,9 +128,8 @@ int main(int argc, char* argv[]) {
     std::optional<std::string> filePath = args.filePath;
     std::string executableName = args.executableName;
 
-    if (debugMode) {
-        Awabler::verbose = true;
-    }
+    Awabler::verbose = debugMode;
+	Awabler::legacy = legacyMode;
 
     if (filePath) {
         std::ifstream file(*filePath, std::ios::in | std::ios::binary);
@@ -157,7 +156,7 @@ int main(int argc, char* argv[]) {
     if (!isAwalang.value()) {
         if (!legacyMode) std::cerr << "[Awabler] [0001] Warning: You're currently compiling Awalang code under AWA5.0++, the code generated may lead to compatibility issues with other interpreters. Use the \"--legacy\" option for legacy Awabling. Find more details in the README." << std::endl;
 
-		awa = Awabler::convertCode(awa, legacyMode);
+		awa = Awabler::convertCode(awa);
         
 		if (debugMode) std::cout << awa << std::endl << std::string(100, '-') << std::endl;
     }

@@ -65,6 +65,7 @@ class AwaInterpreter {
 public:
     std::vector<std::pair<int, std::pair<std::string, std::vector<Bubble>>>> run(const std::string& code, const std::string& input, const bool isDebug);
 private:
+    bool legacy = false;
     std::vector<int> ReadAwatalk(const std::string& awaBlock);
     void buildLabelTable();
     void executeInstructions(const std::string& input);

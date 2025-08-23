@@ -1,5 +1,6 @@
 # AWA5.0 Interpreter
-A C++ port of [Temp Tempai's AWA5.0 Interpreter](https://github.com/TempTempai/AWA5.0).
+A C++ port of [Temp Tempai's AWA5.0 Interpreter](https://github.com/TempTempai/AWA5.0). \
+The port is based on an improved specification, AWA5.0++. For more information, please refer to the [AWA5.0++](#AWA5.0++) section.
 
 [Skip blabbering and jump to usage](#Usage)
 
@@ -128,6 +129,21 @@ Instruction-specific undefined behaviors:
 | Read(`red`)/Read Num(`r3d`)| Empty input                                             | An empty double bubble will be pushed       | Ignored with a warning                       |
 
 [1]: The reason why Merge(`mrg`) is on the list is that the AWA5.0 Specification states the instruction should act like Add(`4dd`) if two simple bubbles are present. But the original and other 3rd party interpreters treat it as a merge into a double bubble instead, so I decided to maintain this as a feature, instead of fixing it.
+</details>
+
+### AWA5.0++
+All features below are not stated in the original AWA5.0 Specification, but are added in this port to improve the language. They are not part of the original specification, hence might not be supported by other interpreters. \
+You can use the `--legacy` flag to disable these features and make the interpreter behave as close to the original specification as possible. \
+Awalang under the new AWA5.0++ specification will have a starting header `awawa`, corresponding to `awa` in the original specification.
+
+<details>
+<summary>ASCII Support</summary>
+
+The original AWA5.0 Specification uses AwaSCII, an optimized version of ASCII, to represent characters within the limit of 6 bits. \
+To make the language more universal, this port supports the full ASCII table. \
+Now the instruction Blow(`blw`) can blow any ASCII character, and the instruction Read(`red`) can read any ASCII characters from the input. \
+Due to technical limitations, only the printable ASCII characters(9, 10, 13, and from 32 to 126) are supported in the output, they can still be recognized from Read instructions, but not printed visually. \
+Out of bounds characters will be now printed as `?`, instead of being ignored.
 </details>
 
 ## Usage

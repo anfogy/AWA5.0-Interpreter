@@ -10,6 +10,15 @@
 #include <cstdlib>
 #include <optional>
 
+/**
+* @brief Replaces all occurrences of a substring in a string with another substring.
+* 
+* @param str The string to be modified.
+* @param from The substring to be replaced.
+* @param to The substring to replace with.
+* 
+* @remark Helper function.
+*/
 static void replace(std::string& str, const std::string& from, const std::string& to) {
     if (from.empty()) return;
     size_t start_pos = 0;
@@ -19,6 +28,13 @@ static void replace(std::string& str, const std::string& from, const std::string
     }
 }
 
+/**
+* @brief Trims leading and trailing whitespace from a string.
+* 
+* @param s The string to be modified.
+* 
+* @remark Helper function.
+*/
 static void strip(std::string& s) {
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
         return !std::isspace(ch);
@@ -28,6 +44,16 @@ static void strip(std::string& s) {
         }).base(), s.end());
 }
 
+/**
+* @brief Joins a vector of strings into a single string with a specified delimiter.
+* 
+* @param parts The vector of strings to be joined.
+* @param delimiter The string to be inserted between each part.
+* 
+* @return A single string that is the result of joining the input strings with the delimiter.
+* 
+* @remark Helper function.
+*/
 static std::string join(const std::vector<std::string>& parts, const std::string& delimiter) {
     std::ostringstream oss;
     for (size_t i = 0; i < parts.size(); ++i) {

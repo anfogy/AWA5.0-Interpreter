@@ -39,7 +39,7 @@ inline void print_usage(const std::string& executableName) {
     std::cerr << "    The above command will execute the .awa file as Awably and output debug informations." << std::endl;
     std::cerr << std::endl;
     std::cerr << "       " << executableName << " --awably \"red; prn;\" --input \"Hello, world.\" -L" << std::endl;
-    std::cerr << "    The above command will execute \"red; prn;\" as Awably in legacy mode, with the input \"Hello, world.\"." << std::endl;
+    std::cerr << "    The above command will execute \"red; prn;\" as legacy Awably, with the input \"Hello, world.\"." << std::endl;
 }
 
 inline ParsedArguments parse_arguments(int argc, char* argv[]) {

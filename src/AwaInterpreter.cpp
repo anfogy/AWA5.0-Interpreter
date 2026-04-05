@@ -22,6 +22,7 @@ static std::map<int, std::string> AwatismsMap = {
     {18, "eql"},
     {19, "lss"},
     {20, "gr8"},
+	{21, "mov"},
     {31, "trm"}
 };
 
@@ -33,7 +34,7 @@ static std::string reverse(int value) {
     return "undefined";
 }
 
-std::vector<std::pair<int, std::pair<std::string, std::vector<Bubble>>>> AwaInterpreter::run(const std::string& code, const std::string& input, const bool isDebug) {
+std::pair<std::vector<StacktraceEntry>, bool> AwaInterpreter::run(const std::string& code, const std::string& input, const bool isDebug) {
     bubbleAbyss.clear();
     stacktrace.clear();
 
@@ -41,27 +42,10 @@ std::vector<std::pair<int, std::pair<std::string, std::vector<Bubble>>>> AwaInte
     
     if (isDebug) {
         for (int i = 0; i < data.size();) {
-            bool var = false;
-
-            switch (data[i]) {
-            case blo:
-            case sbm:
-            case srn:
-            case lbl:
-            case jmp:
-                var = true;
-            }
-
-            if (var && i + 1 < data.size()) {
-                std::cout << reverse(data[i]) << " " << data[i + 1] << "\n";
-                i += 2;
-            }
-            else {
-                std::cout << reverse(data[i]) << "\n";
-                i++;
-            }
-        }
-        std::cout << std::string(100, '-') << std::endl;
+			std::cout << data[i] << " ";
+            i++;
+        };
+        std::cout << "\n" << std::string(100, '-') << "\n";
         std::cout << std::endl;
     }
 
@@ -70,45 +54,44 @@ std::vector<std::pair<int, std::pair<std::string, std::vector<Bubble>>>> AwaInte
     std::cout << "Output:" << std::endl;
     executeInstructions(input);
 
-    return stacktrace;
+    return std::make_pair(stacktrace, AwaInterpreter::legacy);
 }
 
-std::vector<int> AwaInterpreter::ReadAwatalk(const std::string& awaBlock) {
+std::vector<int> AwaInterpreter::ReadAwatalk(const std::string& awa) {
     std::vector<int> instructions;
 
-    std::string cleanedAwas;
-    for (char c : awaBlock) {
-        if (c == 'a' || c == 'w' || c == ' ') {
-            cleanedAwas += std::tolower(c);
-        }
-    }
-
     size_t awaIndex = 0;
-    for (; awaIndex < cleanedAwas.size() - 6; awaIndex++) {
-        if (cleanedAwas.substr(awaIndex, 6) == "awawa ") {
+    for (; awaIndex < awa.size() - 6; awaIndex++) {
+        if (awa.substr(awaIndex, 6) == "awawa ") {
+            AwaInterpreter::legacy = false;
             awaIndex += 5;
             break;
         }
 
-        if (cleanedAwas.substr(awaIndex, 4) == "awa ") {
+        if (awa.substr(awaIndex, 4) == "awa ") {
             AwaInterpreter::legacy = true;
             awaIndex += 3;
             break;
         }
     }
-    if (awaIndex >= cleanedAwas.size() - (AwaInterpreter::legacy ? 3 : 5)) {
+    if (awaIndex >= awa.size() - (AwaInterpreter::legacy ? 3 : 5)) {
         return instructions;
     }
 
     int bitCounter = 0;
     int targetBit = 5;
     int newValue = 0;
-    bool param = false;
-    bool signed_ = false;       // This rename is due to collision with C++'s native "signed" keyword
+    std::vector<int> bitsToRead;
+	bool param = false;
+    bool signed_ = false;       // Rename due to collision with the "signed" keyword
+    bool newInstruction = true;
 
-    while (awaIndex < cleanedAwas.size() - 1) {
-        if (cleanedAwas.substr(awaIndex, 2) == "wa") {
-            if (bitCounter == 0 && signed_) {
+	bool previousValueDependent = false;    // Would only be true if non-legacy
+    int previousInstruction = -1;
+
+    while (awaIndex < awa.size() - 1) {
+        if (awa.substr(awaIndex, 2) == "wa") {
+            if (targetBit == 8 && bitCounter == 0 && signed_) {
                 newValue = -1;
             }
             else {
@@ -117,7 +100,7 @@ std::vector<int> AwaInterpreter::ReadAwatalk(const std::string& awaBlock) {
             awaIndex += 2;
             bitCounter++;
         }
-        else if (awaIndex < cleanedAwas.size() - 3 && cleanedAwas.substr(awaIndex, 4) == " awa") {
+        else if (awaIndex < awa.size() - 3 && awa.substr(awaIndex, 4) == " awa") {
             bitCounter++;
             newValue <<= 1;
             awaIndex += 4;
@@ -130,30 +113,108 @@ std::vector<int> AwaInterpreter::ReadAwatalk(const std::string& awaBlock) {
             instructions.push_back(newValue);
 
             bitCounter = 0;
-            if (param) {
-                targetBit = 5;
-                param = false;
-                signed_ = false;
-            }
-            else {
-                switch (newValue) {
-                case blo:
-                    targetBit = 8;
-                    signed_ = true;
-                    param = true;
+
+            // For conditionals
+            if (previousValueDependent) {
+                previousValueDependent = false;
+
+                switch (previousInstruction) {
+                case blw:
+                    if (newValue) {
+                        signed_ = false;
+                        bitsToRead.push_back(4);
+                    }
+                    else {
+                        signed_ = true;
+                        bitsToRead.push_back(8);
+                    }
+                    break;
+                case mov:
+                    if (newValue) {
+                        signed_ = false;
+                        bitsToRead.insert(bitsToRead.end(), { 4, 4 });
+                    }
+                    else {
+
+                        signed_ = true;
+                        bitsToRead.insert(bitsToRead.end(), { 4, 8 });
+                    }
                     break;
                 case sbm:
-                case srn:
-                case lbl:
-                case jmp:
-                    targetBit = 5;
+				case srn:
+				case jmp:
                     signed_ = false;
-                    param = true;
-                    break;
+                    if (newValue) {
+                        bitsToRead.push_back(4);
+                    }
+                    else {
+                        bitsToRead.push_back(5);
+                    }
+					break;
                 default:
                     break;
                 }
             }
+
+            if (newInstruction) {
+				previousInstruction = newValue;
+
+                if (!AwaInterpreter::legacy) {
+                    switch (newValue) {
+                        case blw:
+                            signed_ = false;
+                            bitsToRead.push_back(1);
+					    	previousValueDependent = true;
+                            break;
+                        case sbm:
+                        case srn:
+                        case jmp:
+                            signed_ = false;
+                            bitsToRead.push_back(1);
+							previousValueDependent = true;
+                            break;
+                        case pop:
+                            signed_ = false;
+                            bitsToRead.push_back(4);
+                            break;
+                        case mov:
+                            signed_ = false;
+							bitsToRead.push_back(1);
+							previousValueDependent = true;
+                            break;
+                        default:
+                            break;
+                    }
+                } else {
+                    switch (newValue) {
+                        case blw:
+                            signed_ = true;
+                            bitsToRead.push_back(8);
+                            break;
+                        case sbm:
+                        case srn:
+                        case jmp:
+                        case lbl:
+                            signed_ = false;
+                            bitsToRead.push_back(5);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+
+            if (bitsToRead.size() == 0) {
+                targetBit = 5;
+                signed_ = false;
+				newInstruction = true;
+            }
+            else {
+                targetBit = bitsToRead.front();
+				bitsToRead.erase(bitsToRead.begin());
+				newInstruction = false;
+            }
+
             newValue = 0;
         }
     }
@@ -169,7 +230,7 @@ void AwaInterpreter::buildLabelTable() {
             lblTable[data[i + 1]] = i + 1;
             i++;
             break;
-        case blo:
+        case blw:
         case sbm:
         case srn:
         case jmp:
@@ -184,378 +245,464 @@ void AwaInterpreter::buildLabelTable() {
 void AwaInterpreter::executeInstructions(const std::string& input) {
     size_t i = 0;
     bool terminate = false;
-    unsigned int executionTime = 0;
+    unsigned int executionStep = 0;
 
     while (i < data.size() && !terminate) {
         int op = data[i];
         switch (op) {
-        case nop:
-            break;
-        case prn:
-            if (!bubbleAbyss.empty()) {
-                Bubble bubble = bubbleAbyss.back();
-                bubbleAbyss.pop_back();
-                printBubble(bubble, false);
-            }
-            else {
-                totalWarnings++;
-               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Print on time " << executionTime << " attempted to print an empty stack." << std::endl;
-            }
-            break;
-        case pr1:
-            if (!bubbleAbyss.empty()) {
-                Bubble bubble = bubbleAbyss.back();
-                bubbleAbyss.pop_back();
-                printBubble(bubble, true);
-            }
-            else {
-                totalWarnings++;
-               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Print Num on time " << executionTime << " attempted to print an empty stack." << std::endl;
-            }
-            break;
-        case red: {
-            if (input.empty()) {
-                totalWarnings++;
-               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Read on time " << executionTime << " has no input to read." << std::endl;
+            case nop:
                 break;
-            }
-
-            if (AwaInterpreter::legacy) {
-                BubbleVector bubbles;
-                for (auto it = input.rbegin(); it != input.rend(); ++it) {
-                    char c = *it;
-                    size_t idx = AwaSCII.find(c);
-                    if (idx != std::string::npos) {
-                        bubbles.push_back(Bubble(static_cast<int>(idx)));
-                    }
-                }
-                bubbleAbyss.push_back(Bubble(bubbles));
-            }
-            else
-            {
-                BubbleVector bubbles;
-                for (auto it = input.rbegin(); it != input.rend(); ++it) {
-                    unsigned char uc = static_cast<unsigned char>(*it);
-                    if (uc < 128 || uc > 0) {
-                        bubbles.push_back(Bubble(static_cast<int>(uc)));
-                    }
-                }
-                bubbleAbyss.push_back(Bubble(bubbles));
-            }
-            break;
-        }
-        case r3d: {
-            if (input.empty()) {
-                totalWarnings++;
-                std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Read Num on time " << executionTime << " has no input to read." << std::endl;
-                break;
-			}
-
-            std::istringstream iss(input);
-            std::string token;
-            int number = 0;
-            bool found = false;
-            while (iss >> token) {
-                size_t pos = 0;
-                while (pos < token.size() && (token[pos] == '+' || token[pos] == '-')) ++pos;
-                if (pos < token.size() && std::isdigit(token[pos])) {
-                    try {
-                        number = std::stoi(token);
-                        found = true;
-                        break;
-                    } catch (...) {}
-                }
-            }
-            bubbleAbyss.push_back(Bubble(found ? number : 0));
-            break;
-        }
-        case blo:
-            if (i + 1 < data.size()) {
-                i++;
-                bubbleAbyss.push_back(Bubble(data[i]));
-            }
-            else {
-                totalWarnings++;
-               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Blow on time " << executionTime << " has no valid argument." << std::endl;
-            }
-            break;
-        case sbm:
-            if (i + 1 < data.size()) {
-                i++;
+            case prn:
                 if (!bubbleAbyss.empty()) {
                     Bubble bubble = bubbleAbyss.back();
                     bubbleAbyss.pop_back();
-                    int pos = data[i];
-                    if (pos == 0) {
-                        bubbleAbyss.insert(bubbleAbyss.begin(), bubble);
-                    }
-                    else if (pos > 0 && static_cast<size_t>(pos) <= bubbleAbyss.size()) {
-                        bubbleAbyss.insert(bubbleAbyss.end() - pos, bubble);
-                    }
-                }
-            }
-            else {
-                totalWarnings++;
-               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Submerge on time " << executionTime << " has no valid argument." << std::endl;
-            }
-            break;
-        case pop:
-            if (!bubbleAbyss.empty()) {
-                Bubble bubble = bubbleAbyss.back();
-                bubbleAbyss.pop_back();
-                if (isDouble(bubble)) {
-                    BubbleVector list = getList(bubble);
-                    for (auto& b : list) {
-                        bubbleAbyss.push_back(b);
-                    }
-                }
-            }
-            else {
-                totalWarnings++;
-               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Pop on time " << executionTime << " attempted to pop on an empty stack." << std::endl;
-            }
-            break;
-        case dpl:
-            if (!bubbleAbyss.empty()) {
-                Bubble original = bubbleAbyss.back();
-                if (isDouble(original)) {
-                    BubbleVector copiedList = getList(original);
-                    bubbleAbyss.push_back(Bubble(copiedList));
+                    printBubble(bubble, false);
                 }
                 else {
-                    bubbleAbyss.push_back(Bubble(getInt(original)));
+                    logWarning("Warning: Print attempted to print an empty stack", executionStep);
                 }
-            }
-            else {
-                totalWarnings++;
-               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Duplicate on time " << executionTime << " attempted to duplicate on an empty stack." << std::endl;
-            }
-            break;
-        case srn:
-            if (i + 1 < data.size()) {
-                i++;
-                int count = data[i];
-                if (count > 0) {
-                    count = std::min(count, static_cast<int>(bubbleAbyss.size()));
+                break;
+            case pr1:
+                if (!bubbleAbyss.empty()) {
+                    Bubble bubble = bubbleAbyss.back();
+                    bubbleAbyss.pop_back();
+                    printBubble(bubble, true);
+                }
+                else {
+                    logWarning("Warning: Print Num attempted to print an empty stack", executionStep);
+                }
+                break;
+            case red: {
+                if (input.empty()) {
+                    logWarning("Warning: Read has no input to read", executionStep);
+                    break;
+                }
 
-                    for (int idx = 0; idx < count; ++idx) {
-                        if (isDouble(bubbleAbyss[bubbleAbyss.size() - 1 - idx])) {
-                            totalWarnings++;
-                           std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] Warning: Surround on time " << executionTime << " attempted to surround a double bubble." << std::endl;
-
-                            break;
+                if (AwaInterpreter::legacy) {
+                    BubbleVector bubbles;
+                    for (auto it = input.rbegin(); it != input.rend(); ++it) {
+                        char c = *it;
+                        size_t idx = AwaSCII.find(c);
+                        if (idx != std::string::npos) {
+                            bubbles.push_back(Bubble(static_cast<int>(idx)));
                         }
                     }
-
-                    BubbleVector newBubble;
-                    while (count-- > 0) {
-                        newBubble.insert(newBubble.begin(), bubbleAbyss.back());
-                        bubbleAbyss.pop_back();
+                    bubbleAbyss.push_back(Bubble(bubbles));
+                }
+                else
+                {
+                    BubbleVector bubbles;
+                    for (auto it = input.rbegin(); it != input.rend(); ++it) {
+                        unsigned char uc = static_cast<unsigned char>(*it);
+                        if (uc < 128 || uc > 0) {
+                            bubbles.push_back(Bubble(static_cast<int>(uc)));
+                        }
                     }
-                    bubbleAbyss.push_back(Bubble(newBubble));
+                    bubbleAbyss.push_back(Bubble(bubbles));
                 }
+                break;
             }
-            else {
-                totalWarnings++;
-               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Surround on time " << executionTime << " has no valid argument." << std::endl;
+            case r3d: {
+                if (input.empty()) {
+                    logWarning("Warning: Read Num has no input to read", executionStep);
+                    break;
+		    	}
+
+                std::istringstream iss(input);
+                std::string token;
+                int number = 0;
+                bool found = false;
+                while (iss >> token) {
+                    size_t pos = 0;
+                    while (pos < token.size() && (token[pos] == '+' || token[pos] == '-')) ++pos;
+                    if (pos < token.size() && std::isdigit(token[pos])) {
+                        try {
+                            number = std::stoi(token);
+                            found = true;
+                            break;
+                        } catch (...) {}
+                    }
+                }
+                bubbleAbyss.push_back(Bubble(found ? number : 0));
+                break;
             }
-            break;
-        case mrg:
-            if (bubbleAbyss.size() >= 2) {
-                Bubble bubble1 = bubbleAbyss.back();
-                bubbleAbyss.pop_back();
-                Bubble bubble2 = bubbleAbyss.back();
-                bubbleAbyss.pop_back();
-                bool b1Double = isDouble(bubble1);
-                bool b2Double = isDouble(bubble2);
-                if (!b1Double && !b2Double) {
-                    BubbleVector newBubble;
-                    newBubble.push_back(bubble2);
-                    newBubble.push_back(bubble1);
-                    bubbleAbyss.push_back(Bubble(newBubble));
-                }
-                else if (b1Double && !b2Double) {
-                    BubbleVector list = getList(bubble1);
-                    list.push_back(bubble2);
-                    bubbleAbyss.push_back(Bubble(list));
-                }
-                else if (!b1Double && b2Double) {
-                    BubbleVector list = getList(bubble2);
-                    list.insert(list.begin(), bubble1);
-                    bubbleAbyss.push_back(Bubble(list));
+            case blw:
+                if (AwaInterpreter::legacy) {
+                    if (i + 1 < data.size()) {
+                        i++;
+                        bubbleAbyss.push_back(Bubble(data[i]));
+                    }
+                    else {
+                        logWarning("Warning: Blow has no valid argument", executionStep);
+                    }
                 }
                 else {
-                    BubbleVector list1 = getList(bubble1);
-                    BubbleVector list2 = getList(bubble2);
-                    list1.insert(list1.begin(), list2.begin(), list2.end());
-                    bubbleAbyss.push_back(Bubble(list1));
+                    if (i + 2 < data.size()) {
+                        if (data[++i]) {
+                            int registerIndex = data[++i];
+                            if (registerIndex >= 0 && static_cast<size_t>(registerIndex) < bubblePond.size())
+                                bubbleAbyss.push_back(Bubble(bubblePond[registerIndex]));
+                        }
+                        else {
+                            bubbleAbyss.push_back(Bubble(data[++i]));
+                        }
+                    }
+                    else {
+                        logWarning("Warning: Blow has no or insufficient valid argument", executionStep);
+                    }
                 }
-            }
-            else {
-                totalWarnings++;
-               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Merge on time " << executionTime << " attempted to merge on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
-            }
-            break;
-        case add:
-            if (bubbleAbyss.size() >= 2) {
-                Bubble bubble1 = bubbleAbyss.back();
-                bubbleAbyss.pop_back();
-                Bubble bubble2 = bubbleAbyss.back();
-                bubbleAbyss.pop_back();
-                bubbleAbyss.push_back(addBubbles(bubble1, bubble2));
-            }
-            else {
-                totalWarnings++;
-               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Add on time " << executionTime << " attempted to add on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
-            }
-            break;
-        case sub:
-            if (bubbleAbyss.size() >= 2) {
-                Bubble bubble1 = bubbleAbyss.back();
-                bubbleAbyss.pop_back();
-                Bubble bubble2 = bubbleAbyss.back();
-                bubbleAbyss.pop_back();
-                bubbleAbyss.push_back(subBubbles(bubble1, bubble2));
-            }
-            else {
-                totalWarnings++;
-               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Subtract on time " << executionTime << " attempted to subtract on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
-            }
-            break;
-        case mul:
-            if (bubbleAbyss.size() >= 2) {
-                Bubble bubble1 = bubbleAbyss.back();
-                bubbleAbyss.pop_back();
-                Bubble bubble2 = bubbleAbyss.back();
-                bubbleAbyss.pop_back();
-                bubbleAbyss.push_back(mulBubbles(bubble1, bubble2));
-            }
-            else {
-                totalWarnings++;
-               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Multiply on time " << executionTime << " attempted to multiply on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
-            }
-            break;
-        case div_:
-            if (bubbleAbyss.size() >= 2) {
-                Bubble bubble1 = bubbleAbyss.back();
-                bubbleAbyss.pop_back();
-                Bubble bubble2 = bubbleAbyss.back();
-                bubbleAbyss.pop_back();
-                bubbleAbyss.push_back(divBubbles(bubble1, bubble2));
-            }
-            else {
-                totalWarnings++;
-               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Division on time " << executionTime << " attempted to divide on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
-            }
-            break;
-        case cnt:
-            if (!bubbleAbyss.empty()) {
-                Bubble bubble = bubbleAbyss.back();
-                if (isDouble(bubble)) {
-                    BubbleVector list = getList(bubble);
-                    bubbleAbyss.push_back(Bubble(static_cast<int>(list.size())));
+                break;
+            case sbm:
+                if (i + (AwaInterpreter::legacy ? 1 : 2) < data.size()) {
+                    int pos = 0;
+                    if (!AwaInterpreter::legacy) {
+						if (data[++i]) {
+                            int registerIndex = data[++i];
+                            if (registerIndex >= 0 && static_cast<size_t>(registerIndex) < bubblePond.size())
+                                pos = bubblePond[registerIndex];
+                        }
+                        else {
+                            pos = data[++i];
+                        }
+                    }
+                    else {
+						pos = data[++i];
+                    }
+
+                    if (!bubbleAbyss.empty()) {
+                        Bubble bubble = bubbleAbyss.back();
+                        bubbleAbyss.pop_back();
+                        if (pos == 0) {
+                            bubbleAbyss.insert(bubbleAbyss.begin(), bubble);
+                        }
+                        else if (pos > 0 && static_cast<size_t>(pos) <= bubbleAbyss.size()) {
+                            bubbleAbyss.insert(bubbleAbyss.end() - pos, bubble);
+                        }
+                    }
+                    else {
+                        logWarning("Warning: Submerge attempted to submarge on an empty stack", executionStep);
+                    }
+                }
+                else {
+                    logWarning("Warning: Submerge has no or insufficient valid argument", executionStep);
+                }
+                break;
+            case pop:
+                if (!bubbleAbyss.empty()) {
+                    Bubble bubble = bubbleAbyss.back();
+                    bool isDouble = ::isDouble(bubble);
+                    if (!AwaInterpreter::legacy) 
+                    {
+                        if (i + 1 < data.size()) {
+                            bubblePond[data[++i]] = isDouble ? 0 : getInt(bubble);
+                        }
+                        else {
+                            logWarning("Warning: Pop has no valid argument", executionStep);
+						}
+                    }
+
+                    bubbleAbyss.pop_back();
+                    if (isDouble) {
+                        BubbleVector list = getList(bubble);
+                        for (auto& b : list) {
+                            bubbleAbyss.push_back(b);
+                        }
+                    }
+                }
+                else {
+                    logWarning("Warning: Pop attempted to pop on an empty stack", executionStep);
+                }
+                break;
+            case dpl:
+                if (!bubbleAbyss.empty()) {
+                    Bubble original = bubbleAbyss.back();
+                    if (isDouble(original)) {
+                        BubbleVector copiedList = getList(original);
+                        bubbleAbyss.push_back(Bubble(copiedList));
+                    }
+                    else {
+                        bubbleAbyss.push_back(Bubble(getInt(original)));
+                    }
+                }
+                else {
+                    logWarning("Warning: Duplicate attempted to duplicate on an empty stack", executionStep);
+                }
+                break;
+            case srn:
+                if (i + (AwaInterpreter::legacy ? 1 : 2) < data.size()) {
+                    int count = 0;
+					if (!AwaInterpreter::legacy) {
+                        if (data[++i]) {
+                            int registerIndex = data[++i];
+                            if (registerIndex >= 0 && static_cast<size_t>(registerIndex) < bubblePond.size())
+                                count = bubblePond[registerIndex];
+                        }
+                        else {
+                            count = data[++i];
+                        }
+                    }
+                    else {
+						count = data[++i];
+                    }
+
+                    if (count > 0) {
+                        count = std::min(count, static_cast<int>(bubbleAbyss.size()));
+
+                        for (int idx = 0; idx < count; ++idx) {
+                            if (isDouble(bubbleAbyss[bubbleAbyss.size() - 1 - idx])) {
+                                totalWarnings++;
+                                 std::cerr << "[AwaInterpreter] " << "[" << std::setfill('0') << std::setw(4) << totalWarnings << "] Warning: Surround on step " << executionStep << " attempted to surround a double bubble." << std::endl;
+
+                                break;
+                            }
+                        }
+
+                        BubbleVector newBubble;
+                        while (count-- > 0) {
+                            newBubble.insert(newBubble.begin(), bubbleAbyss.back());
+                            bubbleAbyss.pop_back();
+                        }
+                        bubbleAbyss.push_back(Bubble(newBubble));
+                    }
+                }
+                else {
+                    logWarning("Warning: Surround has no or insufficient valid argument", executionStep);
+                }
+                break;
+            case mrg:
+                if (bubbleAbyss.size() >= 2) {
+                    Bubble bubble1 = bubbleAbyss.back();
+                    bubbleAbyss.pop_back();
+                    Bubble bubble2 = bubbleAbyss.back();
+                    bubbleAbyss.pop_back();
+                    bool b1Double = isDouble(bubble1);
+                    bool b2Double = isDouble(bubble2);
+                    if (!b1Double && !b2Double) {
+                        BubbleVector newBubble;
+                        newBubble.push_back(bubble2);
+                        newBubble.push_back(bubble1);
+                        bubbleAbyss.push_back(Bubble(newBubble));
+                    }
+                    else if (b1Double && !b2Double) {
+                        BubbleVector list = getList(bubble1);
+                        list.push_back(bubble2);
+                        bubbleAbyss.push_back(Bubble(list));
+                    }
+                    else if (!b1Double && b2Double) {
+                        BubbleVector list = getList(bubble2);
+                        list.insert(list.begin(), bubble1);
+                        bubbleAbyss.push_back(Bubble(list));
+                    }
+                    else {
+                        BubbleVector list1 = getList(bubble1);
+                        BubbleVector list2 = getList(bubble2);
+                        list1.insert(list1.begin(), list2.begin(), list2.end());
+                        bubbleAbyss.push_back(Bubble(list1));
+                    }
+                }
+                else {
+                    logWarning("Warning: Merge attempted to merge on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles", executionStep);
+                }
+                break;
+            case add:
+                if (bubbleAbyss.size() >= 2) {
+                    Bubble bubble1 = bubbleAbyss.back();
+                    bubbleAbyss.pop_back();
+                    Bubble bubble2 = bubbleAbyss.back();
+                    bubbleAbyss.pop_back();
+                    bubbleAbyss.push_back(addBubbles(bubble1, bubble2));
+                }
+                else {
+                    logWarning("Warning: Add attempted to add on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles", executionStep);
+                }
+                break;
+            case sub:
+                if (bubbleAbyss.size() >= 2) {
+                    Bubble bubble1 = bubbleAbyss.back();
+                    bubbleAbyss.pop_back();
+                    Bubble bubble2 = bubbleAbyss.back();
+                    bubbleAbyss.pop_back();
+                    bubbleAbyss.push_back(subBubbles(bubble1, bubble2));
+                }
+                else {
+                    logWarning("Warning: Subtract attempted to subtract on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles", executionStep);
+                }
+                break;
+            case mul:
+                if (bubbleAbyss.size() >= 2) {
+                    Bubble bubble1 = bubbleAbyss.back();
+                    bubbleAbyss.pop_back();
+                    Bubble bubble2 = bubbleAbyss.back();
+                    bubbleAbyss.pop_back();
+                    bubbleAbyss.push_back(mulBubbles(bubble1, bubble2));
+                }
+                else {
+                    logWarning("Warning: Multiply attempted to multiply on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles", executionStep);
+                }
+                break;
+            case div_:
+                if (bubbleAbyss.size() >= 2) {
+                    Bubble bubble1 = bubbleAbyss.back();
+                    bubbleAbyss.pop_back();
+                    Bubble bubble2 = bubbleAbyss.back();
+                    bubbleAbyss.pop_back();
+                    bubbleAbyss.push_back(divBubbles(bubble1, bubble2));
+                }
+                else {
+                    logWarning("Warning: Division attempted to divide on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles", executionStep);
+                }
+                break;
+            case cnt:
+                if (!bubbleAbyss.empty()) {
+                    Bubble bubble = bubbleAbyss.back();
+                    if (isDouble(bubble)) {
+                        BubbleVector list = getList(bubble);
+                        bubbleAbyss.push_back(Bubble(static_cast<int>(list.size())));
+                    }
+                    else {
+                        bubbleAbyss.push_back(Bubble(0));
+                    }
                 }
                 else {
                     bubbleAbyss.push_back(Bubble(0));
                 }
-            }
-            else {
-                bubbleAbyss.push_back(Bubble(0));
-            }
-            break;
-        case lbl:
-            if (i + 1 < data.size()) {
-                i++;
-            }
-            else {
-                totalWarnings++;
-               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Label on time " << executionTime << " has no valid argument." << std::endl;
-            }
-            break;
-        case jmp:
-            if (i + 1 < data.size()) {
-                i++;
-                int label = data[i];
-                if (lblTable.find(label) != lblTable.end()) {
-                    i = lblTable[label];
+                break;
+            case lbl:
+                if (i + 1 < data.size()) {
+                    i++;
                 }
                 else {
-                    totalWarnings++;
-                   std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Jump on time " << executionTime << " attempted to jump to a non-existing label " << label << "." << std::endl;
+                    logWarning("Warning: Label has no valid argument", executionStep);
                 }
-            }
-            else {
-                totalWarnings++;
-               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Jump on time " << executionTime << " has no valid argument." << std::endl;
-            }
-            break;
-        case eql:
-            if (bubbleAbyss.size() >= 2) {
-                Bubble b1 = bubbleAbyss.back();
-                Bubble b2 = bubbleAbyss[bubbleAbyss.size() - 2];
-                if (!isDouble(b1) && !isDouble(b2) && getInt(b1) == getInt(b2)) {
-                }
-                else {
-                    skipNextInstruction(i);
-                }
-            }
-            else {
-                totalWarnings++;
-               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Equal on time " << executionTime << " attempted to compare on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
-            }
-            break;
-        case lss:
-            if (bubbleAbyss.size() >= 2) {
-                Bubble b1 = bubbleAbyss.back();
-                Bubble b2 = bubbleAbyss[bubbleAbyss.size() - 2];
-                if (!isDouble(b1) && !isDouble(b2) && getInt(b1) < getInt(b2)) {
+                break;
+            case jmp:
+                if (i + (AwaInterpreter::legacy ? 1 : 2) < data.size()) {
+                    int label = 0;
+                    if (!AwaInterpreter::legacy) {
+                        if (data[++i]) {
+                            int registerIndex = data[++i];
+                            if (registerIndex >= 0 && static_cast<size_t>(registerIndex) < bubblePond.size())
+                                label = bubblePond[registerIndex];
+                        }
+                        else {
+                            label = data[++i];
+                        }
+                    }
+                    else {
+                        label = data[++i];
+					}
+
+                    if (lblTable.find(label) != lblTable.end()) {
+                        i = lblTable[label];
+                    }
+                    else {
+                        logWarning("Warning: Jump attempted to jump to a non-existing label " + std::to_string(label), executionStep);
+                    }
                 }
                 else {
-                    skipNextInstruction(i);
+                    logWarning("Warning: Jump has no valid argument", executionStep);
                 }
-            }
-            else {
-                totalWarnings++;
-               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Less Than on time " << executionTime << " attempted to compare on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
-            }
-            break;
-        case gr8:
-            if (bubbleAbyss.size() >= 2) {
-                Bubble b1 = bubbleAbyss.back();
-                Bubble b2 = bubbleAbyss[bubbleAbyss.size() - 2];
-                if (!isDouble(b1) && !isDouble(b2) && getInt(b1) > getInt(b2)) {
+                break;
+            case eql:
+                if (bubbleAbyss.size() < 2) {
+                    logWarning("Warning: Equal attempted to compare on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles", executionStep);
                 }
                 else {
-                    skipNextInstruction(i);
+                    Bubble b1 = bubbleAbyss.back();
+                    Bubble b2 = bubbleAbyss[bubbleAbyss.size() - 2];
+                    if (!isDouble(b1) && !isDouble(b2) && getInt(b1) == getInt(b2)) {
+                    }
+                    else {
+                        skipNextInstruction(i);
+                    }
                 }
-            }
-            else {
-                totalWarnings++;
-               std::cerr << "[AwaInterpreter] " << "[" << totalWarnings << "] " << "Warning: Greater Than on time " << executionTime << " attempted to compare on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles." << std::endl;
-            }
-            break;
-        case trm:
-            terminate = true;
-            break;
+                break;
+            case lss:
+                if (bubbleAbyss.size() < 2) {
+                    logWarning("Warning: Less Than attempted to compare on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles", executionStep);
+                }
+                else {
+                    Bubble b1 = bubbleAbyss.back();
+                    Bubble b2 = bubbleAbyss[bubbleAbyss.size() - 2];
+                    if (!isDouble(b1) && !isDouble(b2) && getInt(b1) < getInt(b2)) {
+                    }
+                    else {
+                        skipNextInstruction(i);
+                    }
+                }
+                break;
+            case gr8:
+                if (bubbleAbyss.size() < 2) {
+                    logWarning("Warning: Greater Than attempted to compare on a stack with " + std::to_string(bubbleAbyss.size()) + " bubbles", executionStep);
+                }
+                else {
+                    Bubble b1 = bubbleAbyss.back();
+                    Bubble b2 = bubbleAbyss[bubbleAbyss.size() - 2];
+                    if (!isDouble(b1) && !isDouble(b2) && getInt(b1) > getInt(b2)) {
+                    }
+                    else {
+                        skipNextInstruction(i);
+                    }
+                }
+                break;
+            case mov:
+                if (AwaInterpreter::legacy) {
+                    logWarning("Warning: Move is not supported in legacy mode", executionStep);
+                } else {
+                    if (i + 3 < data.size()) {
+                        bool isSecondParamReg = data[++i];
+		    			int target = data[++i];
+		    			int input = data[++i];
+
+                        if (isSecondParamReg) {
+                            bubblePond[target] = bubblePond[input];
+                        }
+                        else {
+                            bubblePond[target] = input;
+                        }
+                    }
+                    else {
+                        logWarning("Warning: Move has no or insufficient valid arguments", executionStep);
+                    }
+                }
+                break;
+            case trm:
+                terminate = true;
+                break;
         }
 
         std::string argument;
         switch (op) {
-        case blo:
+        case jmp:
         case sbm:
         case srn:
+        case blw:
+            if (!AwaInterpreter::legacy) {
+                argument = (data[i - 1] ? "r" : "") + std::to_string(data[i]);
+            }
+            else {
+                argument = std::to_string(data[i]);
+            }
+            break;
         case lbl:
-        case jmp:
             argument = std::to_string(data[i]);
             break;
+        case pop:
+            if (!AwaInterpreter::legacy) {
+                argument = "r" + std::to_string(data[i]);
+			}
+            break;
+        case mov:
+            argument = "r" + std::to_string(data[i - 1]) + ", " + (data[i - 2] ? "r" : "") + std::to_string(data[i]);
+			break;
         default:
             break;
         }
 
-        executionTime++;
+        executionStep++;
         i++;
 
-        stacktrace.push_back(std::make_pair(executionTime, std::make_pair(reverse(op) + " " + argument, bubbleAbyss)));
+        stacktrace.push_back({executionStep, reverse(op) + " " + argument, bubbleAbyss, bubblePond});
     }
 }
 
@@ -563,13 +710,21 @@ void AwaInterpreter::skipNextInstruction(size_t& i) {
     if (i + 1 < data.size()) {
         int nextOp = data[i + 1];
         switch (nextOp) {
-        case blo:
-        case sbm:
-        case srn:
+        case pop:
         case lbl:
         case jmp:
             i += 2;
             break;
+
+        case blw:
+        case sbm:
+        case srn:
+            i += 3;
+            break;
+
+        case mov:
+            i += 4;
+			break;
         default:
             i++;
             break;
@@ -760,4 +915,10 @@ void AwaInterpreter::printBubble(const Bubble& bubble, bool numbersOut) {
             printBubble(*it, numbersOut);
         }
     }
+}
+
+// Add a helper function to log warnings
+void AwaInterpreter::logWarning(const std::string& message, unsigned int executionStep) {
+    totalWarnings++;
+    std::cerr << "[AwaInterpreter] " << "[" << std::setfill('0') << std::setw(4) << totalWarnings << "] " << message << " on step " << executionStep << "." << std::endl;
 }

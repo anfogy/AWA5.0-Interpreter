@@ -31,7 +31,7 @@ int Awabler::convertAwatism(const std::string& instruction) {
     auto it = std::find(lookup.begin(), lookup.end(), instruction);
     if (it == lookup.end()) {
         totalWarnings++;
-        std::cerr << "[Awabler] " << "[" << totalWarnings << "] Warning: Instruction \"" << instruction << "\" undefined." << std::endl;
+        std::cerr << "[Awabler] " << "[" << std::setfill('0') << std::setw(4) << totalWarnings << "] Warning: Instruction \"" << instruction << "\" undefined." << std::endl;
         return -1;
     }
 
@@ -55,7 +55,7 @@ int Awabler::convertAwaSCII(std::string& byte) {
         auto it = std::find(lookup.begin(), lookup.end(), byte);
         if (it == lookup.end()) {
             totalWarnings++;
-            std::cerr << "[Awabler] " << "[" << totalWarnings << "] Warning: Token \"" << byte << "\" is not found in the AwaSCII table." << std::endl;
+            std::cerr << "[Awabler] " << "[" << std::setfill('0') << std::setw(4) << totalWarnings << "] Warning: Token \"" << byte << "\" is not found in the AwaSCII table." << std::endl;
             return -1;
         }
 
@@ -76,14 +76,14 @@ int Awabler::convertAwaSCII(std::string& byte) {
         }
         else if (byte.length() != 1) {
             totalWarnings++;
-            std::cerr << "[Awabler] [" << totalWarnings << "] Warning: Token \"" << byte << "\" is not a single character and is not recognized as a special token (space or \\n)." << std::endl;
+            std::cerr << "[Awabler] [" << std::setfill('0') << std::setw(4) << totalWarnings << "] Warning: Token \"" << byte << "\" is not a single character and is not recognized as a special token (space or \\n)." << std::endl;
             return -1;
         }
 
         unsigned char c = static_cast<unsigned char>(byte[0]);
         if (c > 127 || c < 0) {
             totalWarnings++;
-            std::cerr << "[Awabler] [" << totalWarnings << "] Warning: Character \"" << byte << "\" is outside the valid ASCII range (0-127)." << std::endl;
+            std::cerr << "[Awabler] [" << std::setfill('0') << std::setw(4) << totalWarnings << "] Warning: Character \"" << byte << "\" is outside the valid ASCII range (0-127)." << std::endl;
             return -1;
         }
 
@@ -106,7 +106,7 @@ Awabler::LineResult Awabler::convertLine(const std::string& line) {
         if (std::find(s8.begin(), s8.end(), trimmed) != s8.end() ||
             std::find(u5.begin(), u5.end(), trimmed) != u5.end()) {
             totalWarnings++;
-            std::cerr << "[Awabler] " << "[" <<  totalWarnings << "] Warning: Instruction \"" << trimmed << "\" requires a parameter." << std::endl;
+            std::cerr << "[Awabler] " << "[" <<  std::setfill('0') << std::setw(4) << totalWarnings << "] Warning: Instruction \"" << trimmed << "\" requires a parameter." << std::endl;
             return {"", -1, std::nullopt};
         }
 
@@ -122,7 +122,7 @@ Awabler::LineResult Awabler::convertLine(const std::string& line) {
     if (std::find(s8.begin(), s8.end(), instruction) == s8.end() &&
         std::find(u5.begin(), u5.end(), instruction) == u5.end()) {
         totalWarnings++;
-        std::cerr << "[Awabler] " << "[" <<  totalWarnings << "] Warning: Instruction \"" << instruction << "\" does not require the argument \"" << paramStr << "\"." << std::endl;
+        std::cerr << "[Awabler] " << "[" <<  std::setfill('0') << std::setw(4) << totalWarnings << "] Warning: Instruction \"" << instruction << "\" does not require the argument \"" << paramStr << "\"." << std::endl;
         return {"", -1, std::nullopt};
     }
 
@@ -137,7 +137,7 @@ Awabler::LineResult Awabler::convertLine(const std::string& line) {
         }
         catch (...) {
             totalWarnings++;
-            std::cerr << "[Awabler] " << "[" <<  totalWarnings << "] Warning: Invalid parameter: \"" << paramStr << "\"." << std::endl;
+            std::cerr << "[Awabler] " << "[" <<  std::setfill('0') << std::setw(4) << totalWarnings << "] Warning: Invalid parameter: \"" << paramStr << "\"." << std::endl;
             return {"", -1, std::nullopt};
         }
     }
@@ -151,7 +151,7 @@ Awabler::LineResult Awabler::convertLine(const std::string& line) {
 }
 
 std::string Awabler::convertCode(std::string& code) {
-	if (Awabler::legacy) totalWarnings++;
+	if (!Awabler::legacy) totalWarnings++;
     replace(code, ";", "\n");
 
     std::istringstream iss(code);

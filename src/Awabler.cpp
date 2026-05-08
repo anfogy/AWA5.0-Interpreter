@@ -2,7 +2,7 @@
 
 bool Awabler::verbose = false;
 bool Awabler::legacy = false;
-static int totalWarnings = 0;
+int Awabler::totalWarnings = 0;
 
 std::string Awabler::convertAwatalk(int number, int length) {
     number = number & ((1 << length) - 1);
@@ -25,19 +25,26 @@ std::string Awabler::convertAwatalk(int number, int length) {
 int Awabler::convertAwatism(const std::string& instruction) {
     static const std::vector<std::string> lookup = {
         "nop", "prn", "pr1", "red", "r3d", "blw", "sbm", "pop", "dpl", "srn", "mrg",
-        "4dd", "sub", "mul", "div", "cnt", "lbl", "jmp", "eql", "lss", "gr8", "trm"
+        "add", "sub", "mul", "div", "cnt", "lbl", "jmp", "eql", "lss", "gr8", // AWA5.0
+        
+        "mov", // AWA5.0++
+
+        "trm" // AWA5.0
     };
 
     auto it = std::find(lookup.begin(), lookup.end(), instruction);
     if (it == lookup.end()) {
-        totalWarnings++;
-        std::cerr << "[Awabler] " << "[" << std::setfill('0') << std::setw(4) << totalWarnings << "] Warning: Instruction \"" << instruction << "\" undefined." << std::endl;
-        return -1;
+        logWarning("Instruction \"" + instruction + "\" undefined.");
+        return 0;
     }
 
     int index = static_cast<int>(std::distance(lookup.begin(), it));
+    if (index != 22 && index >= 21 && Awabler::legacy) {
+        logWarning("Tried to transpile AWA5.0++instruction \"" + instruction + "\" under legacy mode.");
+        return 0;
+    }
 
-    return (index == 21) ? 31 : index;
+    return (index == 22) ? 31 : index;
 }
 
 int Awabler::convertAwaSCII(std::string& byte) {
@@ -54,8 +61,7 @@ int Awabler::convertAwaSCII(std::string& byte) {
 
         auto it = std::find(lookup.begin(), lookup.end(), byte);
         if (it == lookup.end()) {
-            totalWarnings++;
-            std::cerr << "[Awabler] " << "[" << std::setfill('0') << std::setw(4) << totalWarnings << "] Warning: Token \"" << byte << "\" is not found in the AwaSCII table." << std::endl;
+            logWarning("Token \"" + byte + "\" is not found in the AwaSCII table.");
             return -1;
         }
 
@@ -75,15 +81,13 @@ int Awabler::convertAwaSCII(std::string& byte) {
             return 13;
         }
         else if (byte.length() != 1) {
-            totalWarnings++;
-            std::cerr << "[Awabler] [" << std::setfill('0') << std::setw(4) << totalWarnings << "] Warning: Token \"" << byte << "\" is not a single character and is not recognized as a special token (space or \\n)." << std::endl;
+            logWarning("Token \"" + byte + "\" is not a single character, and is not recognized as a special token (space or \\n).");
             return -1;
         }
 
         unsigned char c = static_cast<unsigned char>(byte[0]);
         if (c > 127 || c < 0) {
-            totalWarnings++;
-            std::cerr << "[Awabler] [" << std::setfill('0') << std::setw(4) << totalWarnings << "] Warning: Character \"" << byte << "\" is outside the valid ASCII range (0-127)." << std::endl;
+            logWarning("Token \"" + byte + "\" is outside the valid ASCII range (0-127).");
             return -1;
         }
 
@@ -95,59 +99,116 @@ Awabler::LineResult Awabler::convertLine(const std::string& line) {
     static const std::vector<std::string> s8 = {"blw"};
     static const std::vector<std::string> u5 = {"sbm", "srn", "lbl", "jmp"};
 
+    static const std::vector<std::string> multipleParams = { "mov" };
+
     std::string trimmed = line;
     strip(trimmed);
     if (trimmed.empty()) {
-        return {"", -1, std::nullopt};
+        return { "", -1, {} };
 	}
 
     size_t pos = trimmed.find(' ');
     if (pos == std::string::npos) {
         if (std::find(s8.begin(), s8.end(), trimmed) != s8.end() ||
-            std::find(u5.begin(), u5.end(), trimmed) != u5.end()) {
-            totalWarnings++;
-            std::cerr << "[Awabler] " << "[" <<  std::setfill('0') << std::setw(4) << totalWarnings << "] Warning: Instruction \"" << trimmed << "\" requires a parameter." << std::endl;
-            return {"", -1, std::nullopt};
+            std::find(u5.begin(), u5.end(), trimmed) != u5.end() ||
+            std::find(multipleParams.begin(), multipleParams.end(), trimmed) != multipleParams.end()) {
+            logWarning("Instruction \"" + trimmed + "\" requires a parameter.");
+            return { "", -1, {} };
         }
 
         int instrCode = convertAwatism(trimmed);
 
-        return {convertAwatalk(instrCode, 5), instrCode, std::nullopt};
+        return { convertAwatalk(instrCode, 5), instrCode, {} };
     }
 
     std::string instruction = trimmed.substr(0, pos);
-    std::string paramStr = trimmed.substr(pos + 1);
+    std::string paramStr = trimmed.substr(pos);
     strip(paramStr);
 
     if (std::find(s8.begin(), s8.end(), instruction) == s8.end() &&
-        std::find(u5.begin(), u5.end(), instruction) == u5.end()) {
-        totalWarnings++;
-        std::cerr << "[Awabler] " << "[" <<  std::setfill('0') << std::setw(4) << totalWarnings << "] Warning: Instruction \"" << instruction << "\" does not require the argument \"" << paramStr << "\"." << std::endl;
-        return {"", -1, std::nullopt};
+        std::find(u5.begin(), u5.end(), instruction) == u5.end() &&
+        std::find(multipleParams.begin(), multipleParams.end(), instruction) == multipleParams.end()) {
+        logWarning("Instruction \"" + instruction + "\" does not require the argument \"" + paramStr + "\".");
+        return { "", -1, {} };
     }
 
-    int parameter;
-    if (paramStr.size() >= 3 && paramStr.substr(0, 2) == "S(" && paramStr.back() == ')') {
+    std::vector<ParamInfo> parameters{};
+    size_t commaPos = paramStr.find(',');
+    if (commaPos != std::string::npos) {
+        auto it = std::find(multipleParams.begin(), multipleParams.end(), instruction);
+        if (it == multipleParams.end()) {
+             logWarning("Instruction \"" + instruction + "\" has multiple parameters, which is not required.");
+             return { "", -1, {} };
+        }
+
+        int index = static_cast<int>(std::distance(multipleParams.begin(), it));
+        if (index == 0) {   // mov
+            std::string firstParamStr = paramStr.substr(0, commaPos);
+            std::string secondParamStr = paramStr.substr(commaPos + 1);
+            strip(firstParamStr);
+            strip(secondParamStr);
+
+            if (firstParamStr[0] == 'r') {
+                try {
+                    parameters.push_back({std::stoi(firstParamStr.substr(1)), 4});
+                }
+                catch (...) {
+                    logWarning("First parameter \"" + firstParamStr + "\" of instruction \"" + instruction + "\" is invalid.");
+                    return { "", -1, {} };
+                }
+            }
+            else {
+                logWarning("First parameter \"" + firstParamStr + "\" of instruction \"" + instruction + "\" must start with 'r'.");
+                return { "", -1, {} };
+            }
+
+			if (secondParamStr[0] == 'r') { // mov rX, rY
+                try {
+					parameters.push_back({1, 1});
+                    parameters.push_back({std::stoi(secondParamStr.substr(1)), 4});
+                }
+                catch (...) {
+                    logWarning("Second parameter \"" + secondParamStr + "\" of instruction \"" + instruction + "\" is invalid.");
+                    return { "", -1, {} };
+                }
+            }
+			else {  // mov rX, Y
+                try {
+					parameters.push_back({0, 1});
+                    parameters.push_back({std::stoi(secondParamStr), 8});
+                }
+                catch (...) {
+                    logWarning("Second parameter \"" + secondParamStr + "\" of instruction \"" + instruction + "\" is invalid.");
+                    return { "", -1, {} };
+                }
+            }
+        }
+    }
+    else if (paramStr.substr(0, 2) == "S(" && paramStr.back() == ')') {
         std::string inner = paramStr.substr(2, paramStr.size() - 3);
-        parameter = convertAwaSCII(inner);
+        parameters.push_back({convertAwaSCII(inner), 8});
     }
     else {
         try {
-            parameter = std::stoi(paramStr);
+            parameters.push_back(Awabler::ParamInfo{ std::stoi(paramStr), (std::find(u5.begin(), u5.end(), instruction) != u5.end()) ? 5 : 8 });
         }
         catch (...) {
-            totalWarnings++;
-            std::cerr << "[Awabler] " << "[" <<  std::setfill('0') << std::setw(4) << totalWarnings << "] Warning: Invalid parameter: \"" << paramStr << "\"." << std::endl;
-            return {"", -1, std::nullopt};
+            logWarning("Parameter \"" + paramStr + "\" of instruction \"" + instruction + "\" is invalid.");
+            return { "", -1, {} };
         }
     }
 
     int instrCode = convertAwatism(instruction);
-    int paramLength = (std::find(u5.begin(), u5.end(), instruction) != u5.end()) ? 5 : 8;
     std::string convInstr = convertAwatalk(instrCode, 5);
-    std::string convParam = convertAwatalk(parameter, paramLength);
+    std::string convParam = std::accumulate(
+        parameters.begin() + 1, parameters.end(),
+        convertAwatalk(parameters[0].value, parameters[0].length),
+        [&parameters](const std::string& acc, const ParamInfo& param) {
+            return acc + " " + convertAwatalk(param.value, param.length);
+        }
+    );
 
-    return {convInstr + " " + convParam, instrCode, parameter};
+    return Awabler::LineResult{ convInstr + " " + convParam, instrCode, parameters };
 }
 
 std::string Awabler::convertCode(std::string& code) {
@@ -177,17 +238,22 @@ std::string Awabler::convertCode(std::string& code) {
 
     if (verbose) {
         for (size_t i = 0; i < originalLines.size(); i++) {
-            std::string param = results[i].parameter.has_value()
-                ? std::to_string(results[i].parameter.value())
-                : "None";
+            std::string param = results[i].parameters.empty()
+                ? "None"
+                : join(results[i].parameters, ", ", [](Awabler::ParamInfo param) { return std::to_string(param.value); });
             std::cout << std::left << std::setw(20) << originalLines[i]
                 << std::setw(50) << results[i].converted
                 << std::setw(5) << results[i].instructionCode
-                << " " << param << std::endl;
+                << param << std::endl;
         }
 
         std::cout << std::string(100, '-') << std::endl;
     }
 
     return convertedCode;
+}
+
+void Awabler::logWarning(const std::string& message) {
+    totalWarnings++;
+    std::cerr << "[Awabler] [" << std::setfill('0') << std::setw(4) << totalWarnings << "] Warning: " << message << std::endl;
 }

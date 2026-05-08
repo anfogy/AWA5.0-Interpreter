@@ -10,7 +10,9 @@ const std::vector<std::string> keywords = {
     "lbl", "jmp", "eql", "lss", "gr8", "trm", "mov"
 };
 
-static const std::vector<std::string> argFilter = { "blw", "sbm", "srn", "lbl", "jmp", "mov", "pop"};
+static const std::vector<std::string> argFilter = { "blw", "sbm", "srn", "lbl", "jmp", "pop" };
+static const std::vector<std::string> argFilterLegacy = { "blw", "sbm", "srn", "lbl", "jmp" };
+static const std::vector<std::string> argFilter2 = { "mov" };
 
 /**
 * @brief Determines whether the input code is Awalang or Awably.
@@ -38,8 +40,9 @@ static bool determineAwaType(const std::string& input) {
 * 
 * @param awa The code to be filtered.
 * @param isAwalang Whether the code is Awalang or not.
+* @param isLegacy Whether the code is using the legacy specification or not.
 */
-static void filterInput(std::string& awa, std::optional<bool> isAwalang) {
+static void filterInput(std::string& awa, std::optional<bool> isAwalang, bool isLegacy) {
     if (isAwalang.value()) {
         std::istringstream iss(awa);
         std::string line, lastValidLine;
@@ -61,17 +64,20 @@ static void filterInput(std::string& awa, std::optional<bool> isAwalang) {
     }
     else {
         static const std::unordered_set<std::string> keywordSet(keywords.begin(), keywords.end());
-        static const std::unordered_set<std::string> argFilterSet(argFilter.begin(), argFilter.end());
+        static const std::unordered_set<std::string> argFilterSet(isLegacy ? argFilterLegacy.begin() : argFilter.begin(), isLegacy ? argFilterLegacy.end() : argFilter.end());
+        static const std::unordered_set<std::string> argFilter2Set(argFilter2.begin(), argFilter2.end());
 		replace(awa, ";", "\n");
         std::istringstream iss(awa);
         std::string line, filtered;
         while (std::getline(iss, line)) {
             std::istringstream linestream(line);
-            std::string instruction, argument;
-            linestream >> instruction >> argument;
+            std::string instruction, argument1, argument2;
+            linestream >> instruction >> argument1 >> argument2;
             if (!instruction.empty() && keywordSet.count(instruction)) {
                 if (!instruction.empty() && argFilterSet.count(instruction)) {
-                    instruction += " " + argument;
+                    instruction += " " + argument1;
+                } else if (!instruction.empty() && argFilter2Set.count(instruction)) {
+                    instruction += " " + argument1 + " " + argument2;
                 }
                 filtered += instruction + "; ";
             }
@@ -218,11 +224,11 @@ int main(int argc, char* argv[]) {
     }
 
     if (isAwalang.has_value()) {
-		filterInput(awa, isAwalang);
+		filterInput(awa, isAwalang, legacyMode);
     }
     else {
         isAwalang = determineAwaType(awa);
-        filterInput(awa, isAwalang);
+        filterInput(awa, isAwalang, legacyMode);
     }
 
     if (debugMode) std::cout << awa << std::endl << std::string(100, '-') << std::endl;

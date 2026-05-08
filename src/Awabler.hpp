@@ -9,6 +9,8 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <optional>
+#include <functional>
+#include <numeric>
 
 /**
 * @brief Replaces all occurrences of a substring in a string with another substring.
@@ -45,22 +47,28 @@ static void strip(std::string& s) {
 }
 
 /**
-* @brief Joins a vector of strings into a single string with a specified delimiter.
+* @brief Joins a vector of elements into a single string with a specified delimiter.
+*        If a conversion function is provided, it is used to convert elements to strings.
 * 
-* @param parts The vector of strings to be joined.
+* @tparam T The type of the elements in the vector.
+* @tparam F The type of the function used to convert elements to strings (optional).
+* 
+* @param parts The vector of elements to be joined.
 * @param delimiter The string to be inserted between each part.
+* @param func (Optional) The function that takes an element of type T and returns its string representation.
 * 
-* @return A single string that is the result of joining the input strings with the delimiter.
+* @return A single string that is the result of joining the input elements (converted to strings if func is provided) with the delimiter.
 * 
 * @remark Helper function.
 */
-static std::string join(const std::vector<std::string>& parts, const std::string& delimiter) {
+template <typename T, typename F = std::function<std::string(const T&)>>
+static std::string join(const std::vector<T>& parts, const std::string& delimiter, F func = [](const T& part) { return part; }) {
     std::ostringstream oss;
     for (size_t i = 0; i < parts.size(); ++i) {
         if (i != 0) {
             oss << delimiter;
         }
-        oss << parts[i];
+        oss << func(parts[i]);
     }
     return oss.str();
 }
@@ -69,17 +77,32 @@ class Awabler {
 public:
     static bool verbose;
     static bool legacy;
+    static int totalWarnings;
     static std::string convertCode(std::string& code);
 
 private:
+    struct ParamInfo {
+        int value;
+        int length;
+    };
+
     struct LineResult {
         std::string converted;
         int instructionCode;
-        std::optional<int> parameter;
+        std::vector<ParamInfo> parameters;
     };
     
     static std::string convertAwatalk(int number, int length = 8);
     static int convertAwatism(const std::string& instruction);
     static int convertAwaSCII(std::string& byte);
     static LineResult convertLine(const std::string& line);
+
+    /**
+    * @brief Logs a warning message.
+    *
+    * @param message The warning message to be logged.
+    *
+    * @remark Helper function.
+    */
+    static void logWarning(const std::string& message);
 };

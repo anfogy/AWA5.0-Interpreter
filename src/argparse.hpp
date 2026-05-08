@@ -35,8 +35,8 @@ inline void print_usage(const std::string& executableName) {
     std::cerr << "       " << executableName << " --awalang --file ./examples/4-elements_stack_reversal_via_loop.awa" << std::endl;
     std::cerr << "    The above command will execute the .awa file as Awalang." << std::endl;
     std::cerr << std::endl;
-    std::cerr << "       " << executableName << " --awably --file ./examples/hello_world.awa -D" << std::endl;
-    std::cerr << "    The above command will execute the .awa file as Awably and output debug informations." << std::endl;
+    std::cerr << "       " << executableName << " --awably --file ./examples/hello_world.awa -D -L" << std::endl;
+    std::cerr << "    The above command will execute the .awa file as legacy Awably, and output debug informations." << std::endl;
     std::cerr << std::endl;
     std::cerr << "       " << executableName << " --awably \"red; prn;\" --input \"Hello, world.\" -L" << std::endl;
     std::cerr << "    The above command will execute \"red; prn;\" as legacy Awably, with the input \"Hello, world.\"." << std::endl;
